@@ -192,6 +192,16 @@
       margin-top: 0.7em; letter-spacing: 0.04em;
     }
 
+    /* product screenshot */
+    .reveal .shot {
+      display: block;
+      max-width: 82%;
+      height: auto;
+      margin: 0.5em 0 0 0;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
     /* stack diagram (inline SVG) */
     .reveal .stackfig {
       display: flex;
@@ -362,10 +372,35 @@
           </ul>
         </div>
       </div>
-      <div class="codecap">Same feature set: HTTP, SQL, templates, metrics, persistent jobs, SQLite, JSON logs. Spring Boot 4.1.1 with web, data-jpa, thymeleaf, actuator, quartz, prometheus. The starters look leaner in the build file; the classpath tells the truth.</div>
-      <aside class="notes">Measured, same method both sides: count the resolved runtime classpath of this repo vs a Spring Boot 4.1.1 project with the equivalent starters. Two beats. First: 9 starter lines LOOK leaner than 12 explicit picks, and that's exactly the trap. The build file hides the tree. Second: 35 more jars and double the bytes, every one patchable, every one on the Log4Shell slide's attack surface.
+      <div class="codecap">Same feature set: HTTP, SQL, templates, metrics, persistent jobs, SQLite, JSON logs. Spring Boot 4.1.1 with web, data-jpa, thymeleaf, actuator, quartz, prometheus. The starters look leaner in the build file; the classpath tells the truth.</div>      <aside class="notes">Measured, same method both sides: count the resolved runtime classpath of this repo vs a Spring Boot 4.1.1 project with the equivalent starters. Two beats. First: 9 starter lines LOOK leaner than 12 explicit picks, and that's exactly the trap. The build file hides the tree. Second: 35 more jars and double the bytes, every one patchable, every one on the Log4Shell slide's attack surface.
 
 Where Pulse's 67 come from, for the inevitable "67 isn't lean either" question: Jetty is 29 of them (22 jetty-* modules plus 7 jakarta spec APIs its EE10 layer pulls) — that's Javalin's embedded server, one project shipped as fine-grained modules. Micrometer + the Prometheus client are 12 more. The rest is small: Jackson 5, logging 4, JobRunr 4 (asm, gson, cron-utils), JTE 3, jOOQ 3 (two of those are its unused reactive API), Javalin 3 + kotlin-stdlib, SQLite driver 1. So the count is dominated by two well-factored infrastructure suites, not sprawl: 67 jars from 19 distinct upstream projects (multi-module projects like Jetty and the Jakarta specs counted once each). Spring's 102 jars come from 28 projects: Spring Framework/Boot/Data, Hibernate, Tomcat, Quartz, ByteBuddy, AntLR, AspectJ, Thymeleaf, JAXB, and more. The difference is you can name what each of Pulse's 12 direct picks is for; nobody can do that for 102.</aside>
+    </section>
+
+    <section class="content">
+      <span class="tag">[measured, not vibes]</span>
+      <span class="kicker">Challenge 03 · receipts</span>
+      <h2>Count the milliseconds</h2>
+      <div class="cols">
+        <div>
+          <div class="label-good">Pulse · this talk's stack</div>
+          <ul>
+            <li>34 MB fat jar</li>
+            <li>1.4 s to first HTTP response</li>
+            <li>321 MB resident after warmup</li>
+          </ul>
+        </div>
+        <div>
+          <div class="label-bad">Spring Boot + JPA · same features</div>
+          <ul>
+            <li>67 MB fat jar</li>
+            <li>2.2 s to first HTTP response</li>
+            <li>614 MB resident after warmup</li>
+          </ul>
+        </div>
+      </div>
+      <div class="codecap">Same box, default JVM settings, median of three cold starts, cold to first served request. Pulse boots more at startup (JobRunr, schema apply, precompiled templates); the Spring app served one empty endpoint.</div>
+      <aside class="notes">Second receipt, same discipline: measured on the same machine, defaults both sides, median of three cold starts, timed from process launch to the first successful HTTP response. Two honest notes to volunteer before someone else does. One: startup is closer than folklore says, because the JVM itself is most of the cost on a modern JDK; the win is real (1.4 vs 2.2) but it's not 10x, and Pulse was doing MORE at boot: starting JobRunr, applying the schema, serving real templates, while the Spring app served a single empty endpoint. Two: memory is where the gap is stark: half the resident set, same defaults, and that's the number that decides how small a box you can rent. Half the jar, half the memory, faster to first request while doing more work.</aside>
     </section>
 
     <section class="content">
@@ -456,7 +491,10 @@ Where Pulse's 67 come from, for the inevitable "67 isn't lean either" question: 
         <li>Results stored in SQLite; a live dashboard shows status &amp; latency</li>
         <li>Two tables, a handful of routes, one background job</li>
       </ul>
-      <aside class="notes">Introduce the running example so every snippet has a home. The domain is trivial on purpose — the point is the stack, not the app. Tables: monitor + check. Checks run as a JobRunr recurring job, persisted in the same SQLite file.</aside>
+      <img class="shot" src="images/pulse-board.jpg" alt="The Pulse dashboard: three monitors, two green with live latency and uptime, one red and down">
+      <aside class="notes">Introduce the running example so every snippet has a home. The domain is trivial on purpose — the point is the stack, not the app. Tables: monitor + check. Checks run as a JobRunr recurring job, persisted in the same SQLite file.
+
+DEMO CHECKPOINT: if the live demo is on, this is the moment — java -jar pulse-all.jar, open the board, add a monitor, kill the target site, watch the row go red within one poll. 90 seconds. The screenshot on this slide is the fallback if wifi or the demo gods say no.</aside>
     </section>
 
     <!-- 3a Web -->
@@ -771,6 +809,21 @@ scheduler.scheduleRecurrently("check-due-monitors",
     Duration.ofSeconds(15), CheckDueMonitorsJob::run);
 </script></code></pre>
       <div class="codecap">Explicit wiring, no annotations. Job state persists in the same SQLite file; the checker pings due monitors on virtual threads.</div>
+    </section>
+
+    <!-- 3f Tests -->
+    <section class="content">
+      <span class="tag">[measured, not vibes]</span>
+      <span class="kicker">Layer · Tests</span>
+      <h2>Tests boot the real app</h2>
+      <ul>
+        <li>47 tests, 1.8 seconds. The whole suite, every run.</li>
+        <li>JavalinTest starts the actual app on a random port for each test</li>
+        <li>Repository tests hit real SQLite files; route tests hit a real server. No mocks of the framework.</li>
+        <li>No test context to cache, no slices, no annotation zoo</li>
+      </ul>
+      <div class="codecap">The suite finishes in less time than one Spring application context takes to start (1.85 s, measured).</div>
+      <aside class="notes">The numbers are this repo's suite, measured. This is where the Spring crowd feels the difference in their bones: @SpringBootTest exists because starting the context is so expensive it has to be cached and sliced, and a whole vocabulary grew around avoiding your own app. Here the app starts in milliseconds, so every test just... starts it. Real SQLite files in temp dirs, real HTTP against a real Jetty, zero mocking of infrastructure. Comprehension applies to tests too: a test that boots the real thing is a test you can trust and read.</aside>
     </section>
 
     <!-- ===================== 4. DEPLOYMENT ===================== -->
