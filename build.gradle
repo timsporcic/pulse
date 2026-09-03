@@ -66,6 +66,10 @@ jooq {
 
 sourceSets.main.java.srcDir 'build/generated-src/jooq'
 
+// the jOOQ plugin does not wire this itself; without it a fresh clone
+// (or clean build) fails before the generated classes exist
+tasks.named('compileJava') { dependsOn 'jooqCodegen' }
+
 test {
     useJUnitPlatform()
 }
