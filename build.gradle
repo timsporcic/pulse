@@ -1,9 +1,9 @@
 plugins {
     id 'application'
-    id 'com.gradleup.shadow' version '9.6.1'
-    id 'org.jooq.jooq-codegen-gradle' version '3.21.7'
-    id 'gg.jte.gradle' version '3.2.4'
-    id 'com.github.ben-manes.versions' version '0.61.0'
+    alias(libs.plugins.shadow)
+    alias(libs.plugins.jooq.codegen)
+    alias(libs.plugins.jte)
+    alias(libs.plugins.versions)
 }
 
 group = 'org.sporcic'
@@ -19,28 +19,28 @@ repositories {
 }
 
 dependencies {
-    implementation platform('io.javalin:javalin-bom:7.2.3')
-    implementation 'io.javalin:javalin'
-    implementation 'io.javalin:javalin-rendering-jte'
-    implementation 'io.javalin:javalin-micrometer'
-    implementation 'gg.jte:jte:3.2.4'
+    implementation platform(libs.javalin.bom)
+    implementation libs.javalin.core
+    implementation libs.javalin.rendering.jte
+    implementation libs.javalin.micrometer
+    implementation libs.jte
 
-    implementation 'org.jooq:jooq:3.21.7'
-    implementation 'org.xerial:sqlite-jdbc:3.53.4.0'
-    jooqCodegen 'org.jooq:jooq-meta-extensions:3.21.7'
+    implementation libs.jooq.core
+    implementation libs.sqlite.jdbc
+    jooqCodegen libs.jooq.meta.extensions
 
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.2'
-    implementation 'org.jobrunr:jobrunr:7.5.1'
+    implementation libs.jackson.databind
+    implementation libs.jobrunr
 
-    implementation 'io.micrometer:micrometer-registry-prometheus:1.17.1'
+    implementation libs.micrometer.prometheus
 
-    implementation 'org.slf4j:slf4j-api:2.0.18'
-    runtimeOnly 'ch.qos.logback:logback-classic:1.6.3'
-    runtimeOnly 'net.logstash.logback:logstash-logback-encoder:9.0'
+    implementation libs.slf4j.api
+    runtimeOnly libs.logback.classic
+    runtimeOnly libs.logstash.encoder
 
-    testImplementation 'io.javalin:javalin-testtools'
-    testImplementation 'org.junit.jupiter:junit-jupiter:6.1.3'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation libs.javalin.testtools
+    testImplementation libs.junit.jupiter
+    testRuntimeOnly libs.junit.platform.launcher
 }
 
 application {
