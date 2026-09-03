@@ -18,14 +18,21 @@ public class CheckDueMonitorsJob {
 
     private static final Logger log = LoggerFactory.getLogger(CheckDueMonitorsJob.class);
 
+    /** Invoked when a monitor with a notify URL transitions UP -> DOWN. */
+    public interface DownListener {
+        void monitorWentDown(int monitorId);
+    }
+
     private final MonitorRepository monitors;
     private final CheckRepository checks;
     private final Pinger pinger;
+    private final DownListener onDown;
 
-    public CheckDueMonitorsJob(MonitorRepository monitors, CheckRepository checks, Pinger pinger) {
+    public CheckDueMonitorsJob(MonitorRepository monitors, CheckRepository checks, Pinger pinger, DownListener onDown) {
         this.monitors = monitors;
         this.checks = checks;
         this.pinger = pinger;
+        this.onDown = onDown;
     }
 
     public void run() {
@@ -41,8 +48,17 @@ public class CheckDueMonitorsJob {
     }
 
     private void check(Monitor monitor) {
+        var previous = checks.listForMonitor(monitor.id(), 1);
+        var wasUp = !previous.isEmpty() && previous.get(0).up();
+
         var result = pinger.ping(monitor.url());
         checks.add(monitor.id(), Instant.now().toString(), result.up(), result.statusCode(), result.latencyMs());
         log.info("checked {} ({}): {}", monitor.name(), monitor.url(), result.up() ? "up" : "DOWN");
+
+        var hasNotifyUrl = monitor.notifyUrl() != null && !monitor.notifyUrl().isBlank();
+        if (wasUp && !result.up() && hasNotifyUrl) {
+            log.info("{} went DOWN, enqueuing notification", monitor.name());
+            onDown.monitorWentDown(monitor.id());
+        }
     }
 }

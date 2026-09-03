@@ -95,6 +95,12 @@ public class MonitorRepository {
                 .stream().filter(java.util.Objects::nonNull).toList();
     }
 
+    public java.util.Optional<Monitor> findById(int id) {
+        return dsl.selectFrom(MONITOR)
+                .where(MONITOR.ID.eq(id))
+                .fetchOptional(MonitorRepository::toMonitor);
+    }
+
     public boolean exists(int id) {
         return dsl.fetchExists(dsl.selectFrom(MONITOR).where(MONITOR.ID.eq(id)));
     }

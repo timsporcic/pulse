@@ -29,6 +29,7 @@ class CheckDueMonitorsJobTest {
     MonitorRepository monitors;
     CheckRepository checks;
     CheckDueMonitorsJob job;
+    java.util.List<Integer> notifiedMonitorIds = new java.util.ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -39,7 +40,7 @@ class CheckDueMonitorsJobTest {
         dsl = Database.open(tempDir.resolve("pulse-test.db"));
         monitors = new MonitorRepository(dsl);
         checks = new CheckRepository(dsl);
-        job = new CheckDueMonitorsJob(monitors, checks, new Pinger());
+        job = new CheckDueMonitorsJob(monitors, checks, new Pinger(), notifiedMonitorIds::add);
     }
 
     @AfterEach
@@ -98,6 +99,57 @@ class CheckDueMonitorsJobTest {
         job.run();
 
         assertEquals(2, checkCount(monitor.id()));
+    }
+
+    @Test
+    void upToDownTransitionNotifiesListener() {
+        var monitor = monitors.add("Flapper", targetUrl("/broken"), 60,
+                "https://hooks.example/notify");
+        checks.add(monitor.id(), Instant.now().minus(2, ChronoUnit.MINUTES).toString(), true, 200, 10);
+
+        job.run();
+
+        assertEquals(java.util.List.of(monitor.id()), notifiedMonitorIds);
+    }
+
+    @Test
+    void stayingDownDoesNotNotifyAgain() {
+        var monitor = monitors.add("StillDown", targetUrl("/broken"), 60,
+                "https://hooks.example/notify");
+        checks.add(monitor.id(), Instant.now().minus(2, ChronoUnit.MINUTES).toString(), false, 500, 10);
+
+        job.run();
+
+        assertTrue(notifiedMonitorIds.isEmpty());
+    }
+
+    @Test
+    void firstEverCheckBeingDownDoesNotNotify() {
+        monitors.add("BornDown", targetUrl("/broken"), 60, "https://hooks.example/notify");
+
+        job.run();
+
+        assertTrue(notifiedMonitorIds.isEmpty());
+    }
+
+    @Test
+    void stayingUpDoesNotNotify() {
+        var monitor = monitors.add("Healthy", targetUrl("/ok"), 60, "https://hooks.example/notify");
+        checks.add(monitor.id(), Instant.now().minus(2, ChronoUnit.MINUTES).toString(), true, 200, 10);
+
+        job.run();
+
+        assertTrue(notifiedMonitorIds.isEmpty());
+    }
+
+    @Test
+    void transitionWithoutNotifyUrlDoesNotNotify() {
+        var monitor = monitors.add("Quiet", targetUrl("/broken"), 60, null);
+        checks.add(monitor.id(), Instant.now().minus(2, ChronoUnit.MINUTES).toString(), true, 200, 10);
+
+        job.run();
+
+        assertTrue(notifiedMonitorIds.isEmpty());
     }
 
     @Test
