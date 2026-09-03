@@ -6,28 +6,23 @@ Your last "hello world" service pulled two hundred dependencies, and nobody
 on your team can explain what half of them do. We reached for heavy
 frameworks because Java needed them: thread pools, async plumbing, container
 magic to hide the pain. That Java is gone. Virtual threads, records, and a
-grown-up JDK have quietly erased the reasons Spring exists, and most teams
+grown-up JDK have quietly erased the reasons heavy frameworks exist, and most teams
 haven't noticed yet.
 
-This talk walks through a real production app, layer by layer, on a stack
-you can hold in your head: Javalin, jOOQ, server-rendered templates with
-htmx, background jobs and all application state in a single SQLite file.
-Then the demo: deploying that app live to a $6 box with automatic HTTPS,
-continuous backup, and Prometheus metrics, provisioned by one OpenTofu
-file, and watching it catch a site going down in real time. Every claim
-comes with a receipt measured on the demo repo: half the jars of the
-Spring Boot equivalent, half the memory, a 47-test suite that finishes
-before a Spring context finishes starting. The bugs hit along the way are
-in the talk too, including the SQLite lock upgrade that took the app down
-on its first run.
+This talk shows the alternative, built on two principles: comprehension and
+sovereignty. We'll walk a real production app built on Javalin, jOOQ, JTE
+with htmx, and JobRunr for background jobs, with all application state in a
+single SQLite file. Every claim comes with a number measured on the demo
+repo: half the jars, half the memory, a 47-test suite that runs in under
+two seconds. Then the demo: deploying the app live to a $6 box with
+automatic HTTPS, continuous backup, and Prometheus metrics, provisioned by
+one OpenTofu file, and watching it catch a site going down in real time.
 
-You leave with the full repo: ten branches, each one a working checkpoint
-you can check out, build, and run, from empty skeleton to a provisioned box
-that rebuilds itself from a git repo and a backup bucket. And you leave with
-two questions to ask of every dependency you add from now on: can I
-understand it, and do I own it? In 2026 those questions pay twice, because a
-stack small enough to hold in your head is small enough for your AI pair to
-hold in context.
+You leave with two questions to ask of every dependency you add from now
+on: can I understand it, and do I own it? In 2026 those questions pay
+twice, because a stack small enough to hold in your head is small enough
+for your AI pair to hold in context. A small stack is also a small attack
+surface.
 
 ## The Project
 
