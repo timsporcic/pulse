@@ -3,23 +3,27 @@
 A lean uptime monitor — the running example for the _"Lean Java"_ conference talk.
 One process, one SQLite file, server-rendered HTML. Smallness is the feature.
 
-## Current stage: `07-observability`
+## Current stage: `08-packaging`
 
-This branch makes Pulse observable, on top of `06-resilience`:
+This branch readies Pulse for a real box, on top of `07-observability`:
 
-- `GET /metrics` — Prometheus text format from a
-  `PrometheusMeterRegistry` (`metrics/Metrics`), with JVM memory/GC/CPU/
-  uptime binders
-- `metrics/CheckMetrics` — a `pulse_check_seconds` timer and a
-  `pulse_monitor_up` 0/1 gauge, both tagged per monitor; recorded by the
-  checker job on every check
-- Javalin HTTP metrics (`http_server_requests_seconds` per route/status)
-  via the `javalin-micrometer` plugin
-- Structured JSON logging for deployment: run with
-  `-Dlogback.configurationFile=logback-json.xml` (logstash encoder to
-  stdout); the default `logback.xml` stays human-readable for dev
+- `shadowJar` finalized with `mergeServiceFiles()` (service-loader
+  registrations from the JDBC driver, logback, and jackson merge instead
+  of colliding)
+- `ops/Caddyfile` — reverse proxy with automatic HTTPS; `/metrics` is
+  blocked at the edge (Prometheus scrapes localhost directly)
+- `ops/litestream.yml` — continuous SQLite replication to S3-compatible
+  object storage; credentials via environment
+- `ops/pulse.service` — hardened systemd unit (`ProtectSystem=strict`,
+  dedicated `pulse` user, JSON logging config, restart on failure)
+- `ops/cloud-init.yml` — bootstraps a fresh Ubuntu host: Temurin JDK 26,
+  Caddy, Litestream (with its own unit), fetches the jar and configs from
+  the deploy bucket, restores the database from a replica if one exists,
+  starts everything. Bucket URL and credentials are templated in by
+  `09-iac`
 
-Try it: `./gradlew run`, add a monitor, then `curl localhost:7070/metrics | grep pulse_`.
+The deployable artifact remains a single `pulse-all.jar` plus the SQLite
+file; everything in `ops/` is plain text you can read in one sitting.
 
 Earlier stages: `00-skeleton` (Gradle 9.7, JDK 26 toolchain, Javalin 7.2.3 on
 virtual threads, Shadow fat jar), `01-web` (dashboard shell, vendored
@@ -28,7 +32,8 @@ from `schema.sql`, persisted monitor add/list/delete), `03-presentation`
 (JTE board + 5s htmx polling), `04-json` (read-only JSON API with record
 DTOs), `05-jobs` (JobRunr recurring checker + virtual-thread pinger, all
 state in one SQLite file), `06-resilience` (UP→DOWN webhook notifications
-with hand-rolled retry).
+with hand-rolled retry), `07-observability` (Prometheus `/metrics`, check
+timer + up/down gauge, JSON logging).
 
 ## Run it
 

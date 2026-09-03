@@ -1,0 +1,27 @@
+# systemd unit for Pulse. Install to /etc/systemd/system/pulse.service,
+# then: systemctl enable --now pulse
+
+[Unit]
+Description=Pulse uptime monitor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pulse
+Group=pulse
+Environment=PULSE_DB=/var/lib/pulse/pulse.db
+WorkingDirectory=/var/lib/pulse
+ExecStart=/usr/bin/java -Dlogback.configurationFile=logback-json.xml -jar /opt/pulse/pulse-all.jar
+Restart=always
+RestartSec=5
+
+# hardening: one process, one file - it needs very little
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/pulse
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

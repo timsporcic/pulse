@@ -1,0 +1,92 @@
+#cloud-config
+# Bootstraps a fresh Ubuntu box into a running Pulse host:
+# Temurin JDK 26, Caddy, Litestream, the pulse user, and the systemd unit.
+# The jar and config files are fetched from the deploy bucket; 09-iac wires
+# the real bucket URL and credentials in via OpenTofu templating.
+
+users:
+  - name: pulse
+    system: true
+    shell: /usr/sbin/nologin
+
+package_update: true
+packages:
+  - curl
+  - ca-certificates
+
+write_files:
+  - path: /etc/systemd/system/pulse.service
+    content: |
+      [Unit]
+      Description=Pulse uptime monitor
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=simple
+      User=pulse
+      Group=pulse
+      Environment=PULSE_DB=/var/lib/pulse/pulse.db
+      WorkingDirectory=/var/lib/pulse
+      ExecStart=/usr/bin/java -Dlogback.configurationFile=logback-json.xml -jar /opt/pulse/pulse-all.jar
+      Restart=always
+      RestartSec=5
+      NoNewPrivileges=true
+      ProtectSystem=strict
+      ProtectHome=true
+      ReadWritePaths=/var/lib/pulse
+      PrivateTmp=true
+
+      [Install]
+      WantedBy=multi-user.target
+
+  - path: /etc/systemd/system/litestream.service
+    content: |
+      [Unit]
+      Description=Litestream replication
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=simple
+      User=pulse
+      Group=pulse
+      EnvironmentFile=/etc/litestream.env
+      ExecStart=/usr/local/bin/litestream replicate -config /etc/litestream.yml
+      Restart=always
+      RestartSec=5
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  # Temurin JDK 26 (tarball via the Adoptium API; symlinked into /usr/bin)
+  - mkdir -p /opt/java
+  - curl -sL "https://api.adoptium.net/v3/binary/latest/26/ga/linux/x64/jdk/hotspot/normal/eclipse" -o /tmp/jdk.tar.gz
+  - tar -xzf /tmp/jdk.tar.gz -C /opt/java --strip-components=1
+  - ln -sf /opt/java/bin/java /usr/bin/java
+
+  # Caddy (official apt repo)
+  - curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+  - curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' -o /etc/apt/sources.list.d/caddy-stable.list
+  - apt-get update && apt-get install -y caddy
+
+  # Litestream (single Go binary)
+  - curl -sL "https://github.com/benbjohnson/litestream/releases/latest/download/litestream-linux-amd64.tar.gz" | tar -xz -C /usr/local/bin
+
+  # Pulse itself: jar + configs from the deploy bucket (URL templated in 09-iac)
+  - mkdir -p /opt/pulse /var/lib/pulse
+  - curl -sL "${deploy_bucket_url}/pulse-all.jar" -o /opt/pulse/pulse-all.jar
+  - curl -sL "${deploy_bucket_url}/Caddyfile" -o /etc/caddy/Caddyfile
+  - curl -sL "${deploy_bucket_url}/litestream.yml" -o /etc/litestream.yml
+  - chown -R pulse:pulse /var/lib/pulse
+
+  # Litestream credentials (values templated in by 09-iac)
+  - printf 'LITESTREAM_ACCESS_KEY_ID=%s\nLITESTREAM_SECRET_ACCESS_KEY=%s\n' "${litestream_access_key_id}" "${litestream_secret_access_key}" > /etc/litestream.env
+  - chmod 600 /etc/litestream.env
+
+  # If a replica exists, restore the database before first start
+  - -sudo -u pulse litestream restore -if-replica-exists -config /etc/litestream.yml /var/lib/pulse/pulse.db
+
+  - systemctl daemon-reload
+  - systemctl enable --now pulse litestream caddy

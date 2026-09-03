@@ -90,4 +90,7 @@ shadowJar {
     archiveBaseName = 'pulse'
     archiveClassifier = 'all'
     archiveVersion = ''
+    // several deps register via META-INF/services (JDBC driver, logback,
+    // jackson); merge them instead of letting the last jar win
+    mergeServiceFiles()
 }
