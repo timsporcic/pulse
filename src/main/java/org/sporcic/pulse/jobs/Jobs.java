@@ -26,6 +26,19 @@ public final class Jobs {
 
     private Jobs() {}
 
+    /**
+     * Configures and starts the JobRunr background server, then registers the
+     * recurring check job. Call exactly once, at boot, before the web server -
+     * JobRunr keeps static state and a thread pool alive for the process
+     * lifetime. Opens its own DataSource on the same SQLite file as the web
+     * app; the IMMEDIATE transaction mode in {@code Database} is what makes
+     * those two writers coexist.
+     *
+     * <p>The JobActivator below is the whole "dependency injection" story:
+     * JobRunr stores job class names in SQLite and asks the activator for the
+     * live instance at execution time. Both job singletons are wired by hand
+     * right here.
+     */
     public static void start(Path dbFile, io.micrometer.core.instrument.MeterRegistry registry) {
         var dataSource = Database.dataSource(dbFile);
         var dsl = DSL.using(dataSource, SQLDialect.SQLITE);

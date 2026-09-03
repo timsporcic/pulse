@@ -21,6 +21,17 @@ public class WebhookNotifier {
     private static final Logger log = LoggerFactory.getLogger(WebhookNotifier.class);
     private static final int MAX_ATTEMPTS = 3;
 
+    /**
+     * The JSON body the webhook receives. Field names are the external
+     * contract; {@code status} is always {@code "down"} today but exists so
+     * an up-recovery notification could reuse the shape.
+     *
+     * @param monitor    the monitor's display name
+     * @param url        the monitored URL that went down
+     * @param status     always {@code "down"} today
+     * @param statusCode last HTTP status, or null when the site never answered
+     * @param at         ISO-8601 UTC timestamp of the failing check
+     */
     public record Payload(String monitor, String url, String status, Integer statusCode, String at) {}
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -29,15 +40,25 @@ public class WebhookNotifier {
             .connectTimeout(Duration.ofSeconds(5))
             .build();
 
+    /** Production configuration: 2s base backoff (attempts at +2s and +4s). */
     public WebhookNotifier() {
         this(Duration.ofSeconds(2));
     }
 
+    /** @param baseBackoff first retry delay; doubles per attempt. Tests pass milliseconds. */
     public WebhookNotifier(Duration baseBackoff) {
         this.baseBackoff = baseBackoff;
     }
 
-    /** Posts a down notification. Returns true when the webhook accepted it. */
+    /**
+     * Posts a down notification: up to three attempts, backoff doubling from
+     * {@code baseBackoff} between them. Success is any 2xx; non-2xx and
+     * exceptions both retry. After the last attempt it logs and returns false
+     * rather than throwing - deliberately, so JobRunr does not layer its own
+     * ten retries on top of ours.
+     *
+     * @return true when the webhook accepted the notification
+     */
     public boolean notifyDown(String notifyUrl, String monitorName, String monitorUrl, Integer statusCode, String at) {
         var request = HttpRequest.newBuilder(URI.create(notifyUrl))
                 .timeout(Duration.ofSeconds(10))

@@ -11,14 +11,22 @@ import java.time.Instant;
 import java.util.concurrent.Executors;
 
 /**
- * Pings every monitor that is due and records the result. Pings run
- * concurrently on virtual threads; writes are serialized by SQLite itself.
+ * The recurring heart of Pulse: pings every monitor that is due, records each
+ * result, and reports UP-to-DOWN transitions. JobRunr runs {@link #run()}
+ * every 15 seconds; {@code MonitorRepository.listDue} keeps that cadence from
+ * out-pacing any monitor's own interval. Pings run concurrently on virtual
+ * threads; writes are serialized by SQLite itself.
  */
 public class CheckDueMonitorsJob {
 
     private static final Logger log = LoggerFactory.getLogger(CheckDueMonitorsJob.class);
 
-    /** Invoked when a monitor with a notify URL transitions UP -> DOWN. */
+    /**
+     * Invoked when a monitor with a notify URL transitions UP -> DOWN. Fires
+     * only on the transition edge: staying down, or a first-ever check that is
+     * down, stays silent. Production wires this to a JobRunr enqueue of
+     * {@link NotifyDownJob}; tests pass a recording lambda.
+     */
     public interface DownListener {
         void monitorWentDown(int monitorId);
     }
@@ -38,6 +46,12 @@ public class CheckDueMonitorsJob {
         this.metrics = metrics;
     }
 
+    /**
+     * One sweep: fetch the due list, ping each monitor on its own virtual
+     * thread, and wait for all of them (the try-with-resources close joins the
+     * executor). Blocking until done is intentional - JobRunr should not mark
+     * the job complete while pings are still in flight.
+     */
     public void run() {
         var due = monitors.listDue(Instant.now());
         if (due.isEmpty()) {
@@ -50,6 +64,12 @@ public class CheckDueMonitorsJob {
         }
     }
 
+    /**
+     * Pings one monitor and records the outcome. The previous check is read
+     * BEFORE the new row is written - that ordering is what makes transition
+     * detection work. Safe because each monitor is checked by exactly one
+     * thread per sweep and sweeps never overlap.
+     */
     private void check(Monitor monitor) {
         var previous = checks.listForMonitor(monitor.id(), 1);
         var wasUp = !previous.isEmpty() && previous.get(0).up();

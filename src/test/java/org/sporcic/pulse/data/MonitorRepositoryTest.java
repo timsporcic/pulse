@@ -56,6 +56,18 @@ class MonitorRepositoryTest {
     }
 
     @Test
+    void deleteRemovesMonitorWithCheckHistory() {
+        var dsl = Database.open(dbFile);
+        var checks = new CheckRepository(dsl);
+        var monitor = repository.add("Checked", "https://checked.example", 60, null);
+        checks.add(monitor.id(), "2026-09-03T12:00:00Z", true, 200, 10);
+
+        assertTrue(repository.delete(monitor.id()));
+        assertTrue(repository.list().isEmpty());
+        assertTrue(checks.listForMonitor(monitor.id(), 10).isEmpty());
+    }
+
+    @Test
     void deleteReturnsFalseForUnknownId() {
         assertFalse(repository.delete(9999));
     }

@@ -7,10 +7,16 @@ import io.micrometer.core.instrument.binder.system.UptimeMetrics;
 import io.micrometer.prometheusmetrics.PrometheusConfig;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 
+/** Builds the app's one Prometheus registry. */
 public final class Metrics {
 
     private Metrics() {}
 
+    /**
+     * A Prometheus registry with the standard JVM binders (memory, GC, CPU,
+     * uptime) attached. Production creates exactly one and shares it between
+     * the web app and the checker job so {@code /metrics} is a single scrape.
+     */
     public static PrometheusMeterRegistry newRegistry() {
         var registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
         new JvmMemoryMetrics().bindTo(registry);

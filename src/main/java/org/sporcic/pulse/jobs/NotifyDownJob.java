@@ -4,7 +4,11 @@ import org.sporcic.pulse.data.CheckRepository;
 import org.sporcic.pulse.data.MonitorRepository;
 import org.sporcic.pulse.notify.WebhookNotifier;
 
-/** One-off JobRunr job: deliver the down notification for one monitor. */
+/**
+ * One-off JobRunr job: deliver the down notification for one monitor. Because
+ * the enqueued job persists in SQLite, a pending notification survives a crash
+ * or redeploy between detection and delivery.
+ */
 public class NotifyDownJob {
 
     private final MonitorRepository monitors;
@@ -17,6 +21,12 @@ public class NotifyDownJob {
         this.notifier = notifier;
     }
 
+    /**
+     * Loads the monitor fresh and posts the webhook with its latest check
+     * details. State is re-read at delivery time, not captured at enqueue
+     * time: a monitor deleted (or stripped of its notify URL) in between is
+     * skipped quietly rather than notified stalely.
+     */
     public void notifyDown(int monitorId) {
         var monitor = monitors.findById(monitorId).orElse(null);
         if (monitor == null || monitor.notifyUrl() == null || monitor.notifyUrl().isBlank()) {

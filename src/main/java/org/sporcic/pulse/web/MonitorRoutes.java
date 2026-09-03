@@ -5,7 +5,12 @@ import io.javalin.http.Context;
 import org.sporcic.pulse.data.MonitorRepository;
 import org.sporcic.pulse.domain.Monitor;
 
-/** Form endpoints used by the board UI; reads live in the JSON API. */
+/**
+ * Form-encoded mutation endpoints the board UI posts to via htmx:
+ * {@code POST /monitors} (201 with the new id as plain text, 400 when name or
+ * url is missing) and {@code DELETE /monitors/{id}} (204, or 404 for an
+ * unknown id). Reads live in the JSON API under {@code /api}.
+ */
 public class MonitorRoutes {
 
     private final MonitorRepository repository;

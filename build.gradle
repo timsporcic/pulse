@@ -86,6 +86,14 @@ test {
     useJUnitPlatform()
 }
 
+javadoc {
+    // generated code (jOOQ, precompiled JTE) documents itself or doesn't need to
+    exclude 'org/sporcic/pulse/jooq/**'
+    exclude 'gg/jte/generated/**'
+    // keep doclint's real checks, skip the missing-@return/@param pedantry
+    options.addStringOption('Xdoclint:all,-missing', '-quiet')
+}
+
 shadowJar {
     archiveBaseName = 'pulse'
     archiveClassifier = 'all'

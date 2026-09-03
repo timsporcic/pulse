@@ -13,6 +13,15 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.sql.SQLException;
 
+/**
+ * Opens the SQLite database with the pragmas this app depends on and applies
+ * {@code db/schema.sql} (idempotent {@code CREATE ... IF NOT EXISTS}, so the
+ * same file serves jOOQ codegen at build time and migration at runtime).
+ *
+ * <p>Multiple DataSources may point at the same file within this one process
+ * (the web app and JobRunr each open their own); WAL plus IMMEDIATE
+ * transactions make that safe. Never share the file across processes.
+ */
 public final class Database {
 
     private Database() {}
@@ -22,7 +31,12 @@ public final class Database {
         return DSL.using(dataSource(file), SQLDialect.SQLITE);
     }
 
-    /** The configured DataSource (WAL, busy timeout, FKs), schema applied. */
+    /**
+     * The configured DataSource with schema applied. Every connection it hands
+     * out has WAL journaling, a 5s busy timeout, enforced foreign keys, and
+     * {@code BEGIN IMMEDIATE} transactions - see the inline comment for why
+     * the last one is load-bearing.
+     */
     public static SQLiteDataSource dataSource(Path file) {
         var config = new SQLiteConfig();
         config.setJournalMode(SQLiteConfig.JournalMode.WAL);

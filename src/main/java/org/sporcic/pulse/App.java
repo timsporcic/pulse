@@ -14,12 +14,31 @@ import org.sporcic.pulse.web.api.ApiRoutes;
 
 import java.nio.file.Path;
 
+/**
+ * Composition root. All wiring is explicit and lives here or in
+ * {@link org.sporcic.pulse.jobs.Jobs}: no DI container, no classpath scanning.
+ * {@link #create(Path)} builds the web app only (what the tests boot);
+ * {@link #main(String[])} additionally starts the JobRunr background server.
+ */
 public class App {
 
+    /**
+     * Builds the web app with a fresh metrics registry. Convenience for tests,
+     * which don't share a registry with the job scheduler.
+     */
     public static Javalin create(Path dbFile) {
         return create(dbFile, org.sporcic.pulse.metrics.Metrics.newRegistry());
     }
 
+    /**
+     * Builds the Javalin app: static assets, JTE rendering (precompiled
+     * templates), all routes, and the {@code /metrics} endpoint. The app is
+     * not started; callers invoke {@code start(port)}.
+     *
+     * @param dbFile   SQLite file; created and migrated on open
+     * @param registry shared with the checker job in production so check
+     *                 metrics and HTTP metrics land in one scrape
+     */
     public static Javalin create(Path dbFile, io.micrometer.prometheusmetrics.PrometheusMeterRegistry registry) {
         var dsl = Database.open(dbFile);
         var repository = new MonitorRepository(dsl);
@@ -43,6 +62,11 @@ public class App {
         });
     }
 
+    /**
+     * Starts the JobRunr background server, then the web server on port 7070.
+     * The database file defaults to {@code ./pulse.db}; override with the
+     * {@code PULSE_DB} environment variable.
+     */
     public static void main(String[] args) {
         var dbFile = Path.of(System.getenv().getOrDefault("PULSE_DB", "pulse.db"));
         var registry = org.sporcic.pulse.metrics.Metrics.newRegistry();

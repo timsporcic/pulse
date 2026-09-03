@@ -5,9 +5,15 @@ import io.javalin.http.Context;
 import org.sporcic.pulse.data.CheckRepository;
 import org.sporcic.pulse.data.MonitorRepository;
 
-/** Read-only JSON API. The domain records serialize directly as DTOs. */
+/**
+ * The read-only JSON API: {@code GET /api/monitors} and
+ * {@code GET /api/monitors/{id}/checks} (newest first, capped at
+ * {@link #MAX_CHECKS}, 404 for an unknown monitor). The domain records
+ * serialize directly as DTOs, so their field names are the wire contract.
+ */
 public class ApiRoutes {
 
+    /** Cap per checks request; history is unbounded but responses are not. */
     private static final int MAX_CHECKS = 100;
 
     private final MonitorRepository monitors;

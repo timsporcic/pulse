@@ -6,6 +6,12 @@ import org.sporcic.pulse.data.MonitorRepository;
 
 import java.util.Map;
 
+/**
+ * The server-rendered dashboard: {@code GET /} is the full page, {@code GET
+ * /board} the rows fragment htmx polls every 5 seconds. Both render the same
+ * data - mutations rely on the poll to become visible, so there is no
+ * fragment-pushing machinery anywhere.
+ */
 public class BoardRoutes {
 
     private final MonitorRepository repository;
