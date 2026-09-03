@@ -3,15 +3,21 @@
 A lean uptime monitor — the running example for the _"Lean Java"_ conference talk.
 One process, one SQLite file, server-rendered HTML. Smallness is the feature.
 
-## Current stage: `00-skeleton`
+## Current stage: `01-web`
 
-This branch establishes the build and a running web server:
+This branch adds the static dashboard shell on top of `00-skeleton`:
 
-- Gradle 9.7 (Groovy DSL) with a JDK 26 toolchain
-- `application` plugin (`./gradlew run`) and Shadow 9.6.1 for the fat jar
-- Javalin 7.2.3 serving a hello page at `/` on port 7070, handling requests on virtual threads
-- Logback console logging (human-readable dev config)
-- JUnit test that boots the app and asserts the page responds
+- Javalin serves static files from the classpath (`src/main/resources/public/`)
+- `index.html` — the dashboard shell: monitor rows with status edge, latency, and uptime (static placeholder content for now)
+- `htmx.min.js` 4.0.0 vendored — no CDN at runtime
+- `tailwind.css` prebuilt and committed; regenerate with `tools/build-css.sh` when
+  Tailwind classes change (the script downloads the standalone CLI on first use —
+  a dev-time tool only, nothing runs at build or runtime)
+- Tests assert the shell and both vendored assets are served
+
+Earlier stage `00-skeleton` established: Gradle 9.7 (Groovy DSL, JDK 26 toolchain),
+`application` + Shadow plugins, Javalin 7.2.3 on virtual threads, Logback logging,
+and the first boot-the-app test.
 
 ## Run it
 

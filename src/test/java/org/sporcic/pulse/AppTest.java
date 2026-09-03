@@ -9,11 +9,29 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AppTest {
 
     @Test
-    void servesHelloPageAtRoot() {
+    void servesDashboardShellAtRoot() {
         JavalinTest.test(App.create(), (server, client) -> {
             var response = client.get("/");
             assertEquals(200, response.code());
-            assertTrue(response.body().string().contains("Pulse"));
+            var body = response.body().string();
+            assertTrue(body.contains("Pulse"));
+            assertTrue(body.contains("id=\"board\""));
+        });
+    }
+
+    @Test
+    void servesVendoredHtmx() {
+        JavalinTest.test(App.create(), (server, client) -> {
+            var response = client.get("/htmx.min.js");
+            assertEquals(200, response.code());
+        });
+    }
+
+    @Test
+    void servesVendoredTailwindCss() {
+        JavalinTest.test(App.create(), (server, client) -> {
+            var response = client.get("/tailwind.css");
+            assertEquals(200, response.code());
         });
     }
 }

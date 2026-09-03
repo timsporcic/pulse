@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+/* Pulse palette — light clinical status board */
+@theme {
+  --color-mist: #f4f7f5;
+  --color-ink: #182420;
+  --color-pine: #24594c;
+  --color-pine-deep: #1b4439;
+  --color-up: #1f8a5d;
+  --color-down: #c0392b;
+}
