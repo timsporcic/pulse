@@ -44,6 +44,9 @@
     .reveal h3 { font-size: 1.05em; font-weight: 700; }
 
     .reveal p, .reveal li { line-height: 1.4; }
+    .reveal a { color: var(--accent); text-decoration: none; }
+    .reveal a:hover { text-decoration: underline; }
+    .reveal h2 a, .reveal h3 a { color: inherit; }
     .reveal strong { color: var(--accent); font-weight: 700; }
     .reveal em { font-style: normal; color: var(--accent); font-weight: 600; }
 
@@ -396,7 +399,7 @@
       <span class="kicker">Deployment changed too</span>
       <h2>One artifact is now realistic</h2>
       <ul>
-        <li>GraalVM native-image: one native binary, fast start, low memory</li>
+        <li><a href="https://www.graalvm.org" target="_blank" rel="noopener">GraalVM</a> native-image: one native binary, fast start, low memory</li>
         <li>jlink: ship a trimmed runtime with the app</li>
       </ul>
     </section>
@@ -419,11 +422,11 @@
       <span class="kicker">Our running example</span>
       <h2><em>Pulse</em>. A lean uptime monitor.</h2>
       <ul>
-        <li>Register URLs → a scheduled loop pings each one</li>
+        <li>Register URLs → a recurring job pings each one</li>
         <li>Results stored in SQLite; a live dashboard shows status &amp; latency</li>
-        <li>Two tables, a handful of routes, plain JDK scheduling</li>
+        <li>Two tables, a handful of routes, one background job</li>
       </ul>
-      <aside class="notes">Introduce the running example so every snippet has a home. The domain is trivial on purpose — the point is the stack, not the app. Tables: monitor + check. Checks run on a JDK scheduler, no job library.</aside>
+      <aside class="notes">Introduce the running example so every snippet has a home. The domain is trivial on purpose — the point is the stack, not the app. Tables: monitor + check. Checks run as a JobRunr recurring job, persisted in the same SQLite file.</aside>
     </section>
 
     <!-- 3a Web -->
@@ -438,7 +441,7 @@
 
     <section class="content">
       <span class="kicker">Layer · Web</span>
-      <h2>The choice: <em>Javalin</em></h2>
+      <h2>The choice: <a href="https://javalin.io" target="_blank" rel="noopener"><em>Javalin</em></a></h2>
       <ul>
         <li>Thin, explicit routing on Jetty. No annotation magic.</li>
         <li>Runs on virtual threads; the JSON mapper is one small interface you can swap</li>
@@ -471,7 +474,7 @@ var app = Javalin.create()
 
     <section class="content">
       <span class="kicker">Layer · Data</span>
-      <h2><em>SQLite</em>. The database is a file.</h2>
+      <h2><a href="https://sqlite.org" target="_blank" rel="noopener"><em>SQLite</em></a>. The database is a file.</h2>
       <ul>
         <li>In-process, zero-ops, no network hop</li>
         <li>Your data is a file you own and can copy</li>
@@ -517,7 +520,7 @@ var app = Javalin.create()
 
     <section class="content">
       <span class="kicker">Layer · Data</span>
-      <h2><em>jOOQ</em>. Typed SQL, no ORM.</h2>
+      <h2><a href="https://www.jooq.org" target="_blank" rel="noopener"><em>jOOQ</em></a>. Typed SQL, no ORM.</h2>
       <ul>
         <li>Compile-time type-safe queries</li>
         <li>You always know the exact SQL that runs</li>
@@ -616,7 +619,7 @@ ctx.insertInto(CHECK_RESULT)
 
     <section class="content">
       <span class="kicker">Layer · Presentation</span>
-      <h2>The choice: <em>JTE</em> / j2html</h2>
+      <h2>The choice: <a href="https://jte.gg" target="_blank" rel="noopener"><em>JTE</em></a> / <a href="https://j2html.com" target="_blank" rel="noopener">j2html</a></h2>
       <ul>
         <li>JTE: compile-time, type-safe templates. jOOQ's approach, applied to HTML.</li>
         <li>j2html: HTML as type-safe Java, from Javalin's author</li>
@@ -668,7 +671,7 @@ public void board(Context ctx) {
 
     <section class="content">
       <span class="kicker">Layer · Presentation</span>
-      <h2><em>HTMX</em>. Hypermedia, not a SPA.</h2>
+      <h2><a href="https://htmx.org" target="_blank" rel="noopener"><em>HTMX</em></a>. Hypermedia, not a SPA.</h2>
       <ul>
         <li>Server returns HTML fragments</li>
         <li>No heavy client framework, no build pipeline</li>
@@ -713,29 +716,31 @@ ctx.json(new MonitorView(m.name(), m.url(), m.up(), m.latencyMs()));
       <div class="codecap">Records as DTOs: immutable, explicit, no ceremony.</div>
     </section>
 
-    <!-- 3e Scheduled checks -->
+    <!-- 3e Background jobs -->
     <section class="content">
-      <span class="kicker">Layer · Scheduled checks</span>
-      <h2>The JDK is the scheduler</h2>
+      <span class="kicker">Layer · Background jobs</span>
+      <h2><a href="https://www.jobrunr.io" target="_blank" rel="noopener"><em>JobRunr</em></a>. Jobs that survive a restart.</h2>
       <ul>
-        <li>A <em>ScheduledExecutorService</em> drives the checks on a fixed interval</li>
-        <li>A virtual thread per check; the JDK <em>HttpClient</em> pings with a timeout</li>
-        <li>No job library, no broker. The loop lives in your one process.</li>
+        <li>A recurring job pings whatever is due; each check runs on a virtual thread</li>
+        <li>Job state lives in the same SQLite file. No Redis, no broker, one process.</li>
+        <li>UP→DOWN enqueues a one-off notify job; it fires even if the box restarts first</li>
       </ul>
-      <aside class="notes">The lean replacement for a background-job library: the JDK already schedules and makes HTTP calls. Reinforces "reach for the stdlib first." Single process, so no distributed-job machinery needed.</aside>
+      <aside class="notes">A ScheduledExecutorService was the first draft, and it would work. JobRunr is the one dependency that earns its keep here: enqueued jobs persist in the same SQLite file (jobrunr_* tables), so a pending down-notification survives a crash or deploy. Still one process, still no broker. Reach for the stdlib first, then pay for exactly what it lacks.</aside>
     </section>
 
     <section class="content">
-      <h3>The check loop</h3>
+      <h3>The recurring check job</h3>
       <pre><code class="language-java" data-trim data-noescape><script type="text/template">
-var scheduler = Executors.newSingleThreadScheduledExecutor();
+var scheduler = JobRunr.configure()
+    .useStorageProvider(new SqLiteStorageProvider(dataSource))
+    .useBackgroundJobServer()
+    .initialize()
+    .getJobScheduler();
 
-scheduler.scheduleAtFixedRate(() -> {
-    for (var m : monitors.enabled())
-        Thread.startVirtualThread(() -> checker.check(m));
-}, 0, 60, TimeUnit.SECONDS);
+scheduler.scheduleRecurrently("check-due-monitors",
+    Duration.ofSeconds(15), CheckDueMonitorsJob::run);
 </script></code></pre>
-      <div class="codecap">One JDK scheduler, a virtual thread per check, each ping an HttpClient call with a timeout. No library required.</div>
+      <div class="codecap">Explicit wiring, no annotations. Job state persists in the same SQLite file; the checker pings due monitors on virtual threads.</div>
     </section>
 
     <!-- ===================== 4. DEPLOYMENT ===================== -->
@@ -778,7 +783,7 @@ scheduler.scheduleAtFixedRate(() -> {
 
     <section class="content">
       <span class="kicker">Edge</span>
-      <h2><em>Caddy</em>. Automatic HTTPS.</h2>
+      <h2><a href="https://caddyserver.com" target="_blank" rel="noopener"><em>Caddy</em></a>. Automatic HTTPS.</h2>
       <ul>
         <li>Let's Encrypt out of the box, trivial config</li>
         <li>A single Go binary in front of Javalin</li>
@@ -787,7 +792,7 @@ scheduler.scheduleAtFixedRate(() -> {
 
     <section class="content">
       <span class="kicker">Durability</span>
-      <h2><em>Litestream</em>. Lose the box, keep the data.</h2>
+      <h2><a href="https://litestream.io" target="_blank" rel="noopener"><em>Litestream</em></a>. Lose the box, keep the data.</h2>
       <ul>
         <li>Continuous SQLite replication to object storage</li>
         <li>Point-in-time recovery; restore to a fresh droplet in minutes</li>
@@ -816,7 +821,7 @@ scheduler.scheduleAtFixedRate(() -> {
     <section class="content">
       <span class="tag">[DEPTH]</span>
       <span class="kicker">Provision</span>
-      <h2><em>OpenTofu</em></h2>
+      <h2><a href="https://opentofu.org" target="_blank" rel="noopener"><em>OpenTofu</em></a></h2>
       <ul>
         <li>Droplet, firewall, DNS, object storage, volume, all declared in one file</li>
         <li>The community fork that escaped Terraform's relicensing</li>
@@ -848,7 +853,7 @@ resource "digitalocean_spaces_bucket" "backups" {
       <h2>cloud-init → Ansible</h2>
       <ul>
         <li>cloud-init bootstraps the box on first boot</li>
-        <li>Graduate to Ansible (agentless) when the script outgrows itself</li>
+        <li>Graduate to <a href="https://ansible.com" target="_blank" rel="noopener">Ansible</a> (agentless) when the script outgrows itself</li>
       </ul>
     </section>
 
@@ -856,8 +861,8 @@ resource "digitalocean_spaces_bucket" "backups" {
       <span class="kicker">Going further</span>
       <h2>If you want more</h2>
       <ul>
-        <li>NixOS: the whole machine as one reproducible config</li>
-        <li>Pulumi: infrastructure in Java, your home language</li>
+        <li><a href="https://nixos.org" target="_blank" rel="noopener">NixOS</a>: the whole machine as one reproducible config</li>
+        <li><a href="https://www.pulumi.com" target="_blank" rel="noopener">Pulumi</a>: infrastructure in Java, your home language</li>
       </ul>
     </section>
 
@@ -887,7 +892,7 @@ resource "digitalocean_spaces_bucket" "backups" {
 
     <section class="content">
       <span class="kicker">Metrics</span>
-      <h2><em>Micrometer</em> → Prometheus → Grafana</h2>
+      <h2><a href="https://micrometer.io" target="_blank" rel="noopener"><em>Micrometer</em></a> → <a href="https://prometheus.io" target="_blank" rel="noopener">Prometheus</a> → <a href="https://grafana.com" target="_blank" rel="noopener">Grafana</a></h2>
       <ul>
         <li>Vendor-neutral metrics API; no Spring required</li>
         <li>Javalin plugin exposes HTTP and JVM metrics</li>
@@ -899,13 +904,13 @@ resource "digitalocean_spaces_bucket" "backups" {
       <h2>Structured JSON logs</h2>
       <ul>
         <li>SLF4J + Logback → stdout / journald</li>
-        <li>Optional: Grafana Loki for real log search</li>
+        <li>Optional: <a href="https://grafana.com/oss/loki/" target="_blank" rel="noopener">Grafana Loki</a> for real log search</li>
       </ul>
     </section>
 
     <section class="content">
       <span class="kicker">Traces</span>
-      <h2><em>OpenTelemetry</em> → Tempo / Jaeger</h2>
+      <h2><a href="https://opentelemetry.io" target="_blank" rel="noopener"><em>OpenTelemetry</em></a> → <a href="https://grafana.com/oss/tempo/" target="_blank" rel="noopener">Tempo</a> / <a href="https://www.jaegertracing.io" target="_blank" rel="noopener">Jaeger</a></h2>
       <ul>
         <li>The vendor-neutral standard</li>
         <li>Hand-placed spans over auto-instrumentation</li>
@@ -947,7 +952,7 @@ registry.gauge("pulse.monitor.up", m, mon -> mon.up() ? 1 : 0);
     <section class="content">
       <span class="kicker">One diagram · the whole stack</span>
       <div class="stackfig">
-<svg viewBox="0 0 1060 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pulse architecture: browser through Caddy into the Pulse app on one droplet; a JDK scheduler drives the checker that pings monitored sites; jOOQ writes to a SQLite file replicated by Litestream to object storage; metrics flow to Prometheus.">
+<svg viewBox="0 0 1060 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pulse architecture: browser through Caddy into the Pulse app on one droplet; a JobRunr recurring job drives the checker that pings monitored sites; jOOQ writes to a SQLite file replicated by Litestream to object storage; metrics flow to Prometheus.">
   <defs>
     <marker id="ah" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L7.5,3 L0,6 Z" fill="#5b6470"/></marker>
     <marker id="ahg" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L7.5,3 L0,6 Z" fill="#0e7a52"/></marker>
@@ -989,7 +994,7 @@ registry.gauge("pulse.monitor.up", m, mon -> mon.up() ? 1 : 0);
     <rect class="d-comp" x="410" y="234" width="255" height="44" rx="8"/>
     <text class="d-lbl" x="537" y="256">JSON API · records</text>
     <rect class="d-comp" x="410" y="300" width="255" height="44" rx="8"/>
-    <text class="d-lbl" x="537" y="322">Scheduler · JDK timer</text>
+    <text class="d-lbl" x="537" y="322">JobRunr · recurring job</text>
     <rect class="d-comp" x="410" y="366" width="255" height="44" rx="8"/>
     <text class="d-lbl" x="537" y="388">Checker · timeout</text>
 
@@ -1015,7 +1020,7 @@ registry.gauge("pulse.monitor.up", m, mon -> mon.up() ? 1 : 0);
   </g>
 </svg>
       </div>
-      <aside class="notes">The visual payoff — pre-rendered SVG, no runtime dependency. Walk it: request path (Browser → Caddy → Pulse), scheduled checks (Scheduler → Checker → sites), the data (jOOQ → SQLite), and recovery (Litestream → object storage). Everything inside the dashed box is one fat jar + a file.</aside>
+      <aside class="notes">The visual payoff — pre-rendered SVG, no runtime dependency. Walk it: request path (Browser → Caddy → Pulse), scheduled checks (JobRunr → Checker → sites), the data (jOOQ → SQLite), and recovery (Litestream → object storage). Everything inside the dashed box is one fat jar + a file.</aside>
     </section>
 
     <section class="content">
@@ -1067,9 +1072,9 @@ registry.gauge("pulse.monitor.up", m, mon -> mon.up() ? 1 : 0);
       <span class="kicker">Resources</span>
       <h2>Take it with you</h2>
       <ul>
-        <li>Demo repo: <a href="https://github.com/timsporcic/pulse">github.com/timsporcic/pulse</a></li>
-          <li>Docs: Javalin · jOOQ · JTE · Litestream · OpenTofu</li>
-          <li>Reading: <a href="https://www.terrygodier.com/the-boring-internet/ascii">The Boring Internet</a></li>
+        <li>Demo repo: <a href="https://github.com/timsporcic/pulse" target="_blank" rel="noopener">github.com/timsporcic/pulse</a></li>
+          <li>Docs: <a href="https://javalin.io" target="_blank" rel="noopener">Javalin</a> · <a href="https://www.jooq.org" target="_blank" rel="noopener">jOOQ</a> · <a href="https://jte.gg" target="_blank" rel="noopener">JTE</a> · <a href="https://www.jobrunr.io" target="_blank" rel="noopener">JobRunr</a> · <a href="https://litestream.io" target="_blank" rel="noopener">Litestream</a> · <a href="https://opentofu.org" target="_blank" rel="noopener">OpenTofu</a></li>
+          <li>Reading: <a href="https://www.terrygodier.com/the-boring-internet/ascii" target="_blank" rel="noopener">The Boring Internet</a></li>
       </ul>
     </section>
 
@@ -1078,6 +1083,7 @@ registry.gauge("pulse.monitor.up", m, mon -> mon.up() ? 1 : 0);
       <h1>Thank you</h1>
       <div class="sub">Questions?</div>
       <div class="by">// Tim Sporcic &nbsp;·&nbsp; &lt;tim@sporcic.org&gt;</div>
+      <div class="by"><a href="https://github.com/timsporcic/pulse" target="_blank" rel="noopener">github.com/timsporcic/pulse</a></div>
       <aside class="notes">~12 min Q&A budgeted. Keep the resources slide reachable (press ESC for overview) for questions.</aside>
     </section>
 
