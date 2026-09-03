@@ -99,10 +99,21 @@ public class MonitorRepository {
         return dsl.fetchExists(dsl.selectFrom(MONITOR).where(MONITOR.ID.eq(id)));
     }
 
+    /**
+     * Deletes the monitor and its check history in one transaction: the
+     * checks must go first because check_result has an enforced foreign key
+     * to monitor with no cascade.
+     */
     public boolean delete(int id) {
-        return dsl.deleteFrom(MONITOR)
-                .where(MONITOR.ID.eq(id))
-                .execute() > 0;
+        var checks = org.sporcic.pulse.jooq.Tables.CHECK_RESULT;
+        return dsl.transactionResult(tx -> {
+            tx.dsl().deleteFrom(checks)
+                    .where(checks.MONITOR_ID.eq(id))
+                    .execute();
+            return tx.dsl().deleteFrom(MONITOR)
+                    .where(MONITOR.ID.eq(id))
+                    .execute() > 0;
+        });
     }
 
     private static Monitor toMonitor(MonitorRecord record) {

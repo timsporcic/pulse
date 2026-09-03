@@ -56,6 +56,22 @@ class MonitorRepositoryTest {
     }
 
     @Test
+    void deleteRemovesMonitorWithCheckHistory() {
+        var dsl = Database.open(dbFile);
+        var monitor = repository.add("Checked", "https://checked.example", 60, null);
+        var checks = org.sporcic.pulse.jooq.Tables.CHECK_RESULT;
+        dsl.insertInto(checks)
+                .set(checks.MONITOR_ID, monitor.id())
+                .set(checks.CHECKED_AT, "2026-09-03T12:00:00Z")
+                .set(checks.UP, 1)
+                .execute();
+
+        assertTrue(repository.delete(monitor.id()));
+        assertTrue(repository.list().isEmpty());
+        assertEquals(0, dsl.fetchCount(checks, checks.MONITOR_ID.eq(monitor.id())));
+    }
+
+    @Test
     void deleteReturnsFalseForUnknownId() {
         assertFalse(repository.delete(9999));
     }
