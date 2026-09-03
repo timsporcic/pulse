@@ -68,6 +68,11 @@ public class App {
      * {@code PULSE_DB} environment variable.
      */
     public static void main(String[] args) {
+
+        // Disable jOOQ's startup logo and tips
+        System.setProperty("org.jooq.no-logo", "true");
+        System.setProperty("org.jooq.no-tips", "true");
+
         var dbFile = Path.of(System.getenv().getOrDefault("PULSE_DB", "pulse.db"));
         var registry = org.sporcic.pulse.metrics.Metrics.newRegistry();
         org.sporcic.pulse.jobs.Jobs.start(dbFile, registry);

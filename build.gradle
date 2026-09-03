@@ -3,6 +3,7 @@ plugins {
     id 'com.gradleup.shadow' version '9.6.1'
     id 'org.jooq.jooq-codegen-gradle' version '3.21.7'
     id 'gg.jte.gradle' version '3.2.4'
+    id 'com.github.ben-manes.versions' version '0.61.0'
 }
 
 group = 'org.sporcic'
@@ -46,6 +47,8 @@ application {
     mainClass = 'org.sporcic.pulse.App'
 }
 
+def jooqGeneratedDir = layout.buildDirectory.dir("generated/sources/jooq/java/main")
+
 jooq {
     configuration {
         generator {
@@ -66,15 +69,25 @@ jooq {
                     }
                 }
             }
+            generate {
+                daos = false
+                pojos = false
+                records = true
+                fluentSetters = true
+            }
             target {
                 packageName = 'org.sporcic.pulse.jooq'
-                directory = 'build/generated-src/jooq'
+                directory = jooqGeneratedDir.get().asFile.absolutePath
             }
         }
     }
 }
 
-sourceSets.main.java.srcDir 'build/generated-src/jooq'
+sourceSets.main.java.srcDir jooqGeneratedDir
+
+// the jOOQ plugin does not wire this itself; without it a fresh clone
+// (or clean build) fails before the generated classes exist
+tasks.named('compileJava') { dependsOn 'jooqCodegen' }
 
 jte {
     // Templates are compiled to Java classes at build time and shipped in the
@@ -84,6 +97,11 @@ jte {
 
 test {
     useJUnitPlatform()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs.addAll(['-Xlint:all', '-Xlint:-processing', '-parameters'])
 }
 
 javadoc {
@@ -102,3 +120,16 @@ shadowJar {
     // jackson); merge them instead of letting the last jar win
     mergeServiceFiles()
 }
+
+def isNonStable = { String version ->
+    def stableKeyword = ['RELEASE', 'FINAL', 'GA'].any { it -> version.toUpperCase().contains(it) }
+    def regex = /^[0-9,.v-]+(-r)?$/
+    return !stableKeyword && !(version ==~ regex)
+}
+
+tasks.named("dependencyUpdates").configure {
+    rejectVersionIf {
+        isNonStable(it.candidate.version)
+    }
+}
+
