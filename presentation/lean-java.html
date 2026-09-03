@@ -1065,6 +1065,20 @@ registry.gauge("pulse.monitor.up", m, mon -> mon.up() ? 1 : 0);
       <aside class="notes">Callback to Challenge 03. The payoff: minimal dependencies means a smaller attack surface by definition, on top of the comprehension win. Tie the themes together: comprehension = auditable, sovereignty = telemetry stays home, security = less to breach.</aside>
     </section>
 
+    <section class="content">
+      <span class="tag">[FLEX · the inevitable question]</span>
+      <span class="kicker">Same tests, applied to auth</span>
+      <h2>What about auth?</h2>
+      <ul>
+        <li>One app: build it. PBKDF2 is in the JDK, sessions come free from Jetty, a role is a column and a before-handler</li>
+        <li>"Never roll your own auth" really means never roll your own <em>crypto</em>. Hand-roll the flow; use proven primitives.</li>
+        <li>SSO or MFA: delegate to an IdP you host. <a href="https://www.authelia.com" target="_blank" rel="noopener">Authelia</a> or <a href="https://goauthentik.io" target="_blank" rel="noopener">authentik</a>, one binary beside the app; Caddy's <code>forward_auth</code> enforces it at the edge</li>
+        <li>Auth0 / Okta / Cognito fail the sovereignty test: your user database on someone else's servers, priced per user</li>
+      </ul>
+      <div class="codecap">Hash with the JDK, session with Jetty, authorize with an if. When you need SSO, add one binary you host, not one SaaS you rent.</div>
+      <aside class="notes">This question comes every time, so answer it before Q&A. Beat one: auth at this scale is a login form, a password hash, and a session cookie, maybe 150 lines you fully understand. The thing people rightly fear is the crypto, and the JDK already has it (SecretKeyFactory, PBKDF2WithHmacSHA256); add a single Argon2 lib if you want memory-hard. Beat two: Spring Security is the most magic-dense corner of the whole Spring ecosystem, a filter chain you configure through a DSL and debug forty frames deep, which makes auth the strongest illustration of the talk's thesis. Beat three: when SSO/MFA arrives, it's the Caddy/Litestream move again, a self-hosted single binary. The OIDC code flow itself is two HTTP exchanges: JDK HttpClient plus one focused JWT library (nimbus-jose-jwt), no auth framework. Keycloak works but is itself a heavyweight Java app you can't hold in your head. And the SaaS IdPs are the sovereignty argument in its purest form: the most sensitive data you own, living on rented ground, priced per user.</aside>
+    </section>
+
     <section class="lead">
       <h1>Every layer compile-time-safe.<br>No runtime magic.<br>One artifact + a file.</h1>
     </section>
