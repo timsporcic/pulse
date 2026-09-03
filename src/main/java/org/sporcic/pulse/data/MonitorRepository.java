@@ -7,6 +7,9 @@ import org.sporcic.pulse.domain.MonitorView;
 import org.sporcic.pulse.jooq.tables.records.MonitorRecord;
 
 import java.math.BigDecimal;
+import java.util.Optional;
+import java.util.Objects;
+import java.time.Instant;
 import java.util.List;
 
 import static org.sporcic.pulse.jooq.Tables.CHECK_RESULT;
@@ -15,7 +18,7 @@ import static org.sporcic.pulse.jooq.Tables.MONITOR;
 /**
  * Typed jOOQ access to the {@code monitor} table, plus the two derived reads
  * the rest of the app is built on: the board view ({@link #listViews()}) and
- * the checker's work list ({@link #listDue(java.time.Instant)}).
+ * the checker's work list ({@link #listDue(Instant)}).
  */
 public class MonitorRepository {
 
@@ -94,7 +97,7 @@ public class MonitorRepository {
      * (fine at this scale; checked_at is ISO-8601 UTC, which also compares
      * correctly as text if this ever moves into SQL).
      */
-    public List<Monitor> listDue(java.time.Instant now) {
+    public List<Monitor> listDue(Instant now) {
         var lastCheckedAt = dsl.select(DSL.max(CHECK_RESULT.CHECKED_AT))
                 .from(CHECK_RESULT)
                 .where(CHECK_RESULT.MONITOR_ID.eq(MONITOR.ID))
@@ -109,15 +112,15 @@ public class MonitorRepository {
                     var monitor = toMonitor(r.into(MONITOR));
                     var last = (String) r.get(lastCheckedAt);
                     var due = last == null
-                            || java.time.Instant.parse(last).plusSeconds(monitor.intervalSecs()).isBefore(now)
-                            || java.time.Instant.parse(last).plusSeconds(monitor.intervalSecs()).equals(now);
+                            || Instant.parse(last).plusSeconds(monitor.intervalSecs()).isBefore(now)
+                            || Instant.parse(last).plusSeconds(monitor.intervalSecs()).equals(now);
                     return due ? monitor : null;
                 })
-                .stream().filter(java.util.Objects::nonNull).toList();
+                .stream().filter(Objects::nonNull).toList();
     }
 
     /** The monitor, or empty when the id is unknown (e.g. deleted since enqueue). */
-    public java.util.Optional<Monitor> findById(int id) {
+    public Optional<Monitor> findById(int id) {
         return dsl.selectFrom(MONITOR)
                 .where(MONITOR.ID.eq(id))
                 .fetchOptional(MonitorRepository::toMonitor);

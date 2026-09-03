@@ -1,6 +1,7 @@
 package org.sporcic.pulse.metrics;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import org.sporcic.pulse.check.Pinger;
 import org.sporcic.pulse.domain.Monitor;
@@ -43,7 +44,7 @@ public class CheckMetrics {
 
         upGauges.computeIfAbsent(monitor.id(), id -> {
             var value = new AtomicInteger();
-            registry.gauge("pulse.monitor.up", io.micrometer.core.instrument.Tags.of("monitor", monitor.name()), value);
+            registry.gauge("pulse.monitor.up", Tags.of("monitor", monitor.name()), value);
             return value;
         }).set(result.up() ? 1 : 0);
     }

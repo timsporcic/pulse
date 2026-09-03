@@ -3,6 +3,7 @@ package org.sporcic.pulse.jobs;
 import org.sporcic.pulse.data.CheckRepository;
 import org.sporcic.pulse.data.MonitorRepository;
 import org.sporcic.pulse.notify.WebhookNotifier;
+import java.time.Instant;
 
 /**
  * One-off JobRunr job: deliver the down notification for one monitor. Because
@@ -34,7 +35,7 @@ public class NotifyDownJob {
         }
         var latest = checks.listForMonitor(monitorId, 1);
         var statusCode = latest.isEmpty() ? null : latest.get(0).statusCode();
-        var at = latest.isEmpty() ? java.time.Instant.now().toString() : latest.get(0).checkedAt();
+        var at = latest.isEmpty() ? Instant.now().toString() : latest.get(0).checkedAt();
         notifier.notifyDown(monitor.notifyUrl(), monitor.name(), monitor.url(), statusCode, at);
     }
 }

@@ -6,6 +6,7 @@ import org.sporcic.pulse.check.Pinger;
 import org.sporcic.pulse.data.CheckRepository;
 import org.sporcic.pulse.data.MonitorRepository;
 import org.sporcic.pulse.domain.Monitor;
+import org.sporcic.pulse.metrics.CheckMetrics;
 
 import java.time.Instant;
 import java.util.concurrent.Executors;
@@ -35,10 +36,10 @@ public class CheckDueMonitorsJob {
     private final CheckRepository checks;
     private final Pinger pinger;
     private final DownListener onDown;
-    private final org.sporcic.pulse.metrics.CheckMetrics metrics;
+    private final CheckMetrics metrics;
 
     public CheckDueMonitorsJob(MonitorRepository monitors, CheckRepository checks, Pinger pinger,
-                               DownListener onDown, org.sporcic.pulse.metrics.CheckMetrics metrics) {
+                               DownListener onDown, CheckMetrics metrics) {
         this.monitors = monitors;
         this.checks = checks;
         this.pinger = pinger;
