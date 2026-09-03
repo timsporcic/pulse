@@ -339,6 +339,32 @@
     </section>
 
     <section class="content">
+      <span class="tag">[measured, not vibes]</span>
+      <span class="kicker">Challenge 03 · receipts</span>
+      <h2>Count the jars</h2>
+      <div class="cols">
+        <div>
+          <div class="label-good">Pulse · this talk's stack</div>
+          <ul>
+            <li>12 dependencies declared</li>
+            <li>67 jars on the runtime classpath</li>
+            <li>34 MB of other people's code</li>
+          </ul>
+        </div>
+        <div>
+          <div class="label-bad">Spring Boot + JPA · same features</div>
+          <ul>
+            <li>9 starters declared</li>
+            <li>102 jars on the runtime classpath</li>
+            <li>67 MB of other people's code</li>
+          </ul>
+        </div>
+      </div>
+      <div class="codecap">Same feature set: HTTP, SQL, templates, metrics, persistent jobs, SQLite, JSON logs. Spring Boot 4.1.1 with web, data-jpa, thymeleaf, actuator, quartz, prometheus. The starters look leaner in the build file; the classpath tells the truth.</div>
+      <aside class="notes">Measured, same method both sides: count the resolved runtime classpath of this repo vs a Spring Boot 4.1.1 project with the equivalent starters. Two beats. First: 9 starter lines LOOK leaner than 12 explicit picks, and that's exactly the trap. The build file hides the tree. Second: 35 more jars and double the bytes, every one patchable, every one on the Log4Shell slide's attack surface. And be fair: 67 isn't tiny either, Jetty alone is a dozen modular jars. The difference is you can name what each of Pulse's 12 direct picks is for; nobody can do that for 102.</aside>
+    </section>
+
+    <section class="content">
       <span class="kicker">Challenge 04</span>
       <h2>Operational complexity</h2>
       <ul>
