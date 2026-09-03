@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../../src/main/jte";
 
 /* Pulse palette — light clinical status board */
 @theme {

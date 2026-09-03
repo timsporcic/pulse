@@ -61,6 +61,55 @@ class MonitorRepositoryTest {
     }
 
     @Test
+    void listViewsShowsPendingForMonitorWithoutChecks() {
+        repository.add("Fresh", "https://fresh.example", 60, null);
+
+        var views = repository.listViews();
+
+        assertEquals(1, views.size());
+        assertTrue(views.get(0).pending());
+        assertNull(views.get(0).latencyMs());
+        assertNull(views.get(0).uptimePct());
+    }
+
+    @Test
+    void listViewsReflectsLatestCheckAndUptime() {
+        var dsl = Database.open(dbFile);
+        var repo = new MonitorRepository(dsl);
+        var monitor = repo.add("Checked", "https://checked.example", 60, null);
+
+        var checks = org.sporcic.pulse.jooq.Tables.CHECK_RESULT;
+        // three checks: down, then up twice; latest is up with 120ms
+        dsl.insertInto(checks)
+                .set(checks.MONITOR_ID, monitor.id())
+                .set(checks.CHECKED_AT, "2026-09-03T10:00:00Z")
+                .set(checks.UP, 0)
+                .set(checks.STATUS_CODE, 500)
+                .set(checks.LATENCY_MS, 80)
+                .execute();
+        dsl.insertInto(checks)
+                .set(checks.MONITOR_ID, monitor.id())
+                .set(checks.CHECKED_AT, "2026-09-03T10:01:00Z")
+                .set(checks.UP, 1)
+                .set(checks.STATUS_CODE, 200)
+                .set(checks.LATENCY_MS, 90)
+                .execute();
+        dsl.insertInto(checks)
+                .set(checks.MONITOR_ID, monitor.id())
+                .set(checks.CHECKED_AT, "2026-09-03T10:02:00Z")
+                .set(checks.UP, 1)
+                .set(checks.STATUS_CODE, 200)
+                .set(checks.LATENCY_MS, 120)
+                .execute();
+
+        var view = repo.listViews().get(0);
+
+        assertEquals(Boolean.TRUE, view.up());
+        assertEquals(120, view.latencyMs());
+        assertEquals(66.7, view.uptimePct(), 0.1);
+    }
+
+    @Test
     void monitorsSurviveReopeningTheDatabase() {
         repository.add("Durable", "https://durable.example", 60, null);
 
