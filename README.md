@@ -1,79 +1,84 @@
 # Pulse
 
-A lean uptime monitor — the running example for the _"Lean Java"_ conference talk.
-One process, one SQLite file, server-rendered HTML. Smallness is the feature.
+A lean uptime monitor — the running example for the _"Lean Java"_ conference
+talk. Register URLs; a scheduled job pings each one; results go to SQLite; a
+live server-rendered dashboard shows status and latency; a webhook fires when
+a site goes down.
 
-## Current stage: `09-iac`
+The point is not the feature set. Pulse demonstrates a deliberately lean Java
+stack governed by two ideas: **comprehension** (one developer can hold the
+whole system in their head) and **sovereignty** (one artifact plus a SQLite
+file, reconstructable from this repo and a backup bucket, on one small box
+you own).
 
-This branch provisions the whole thing with OpenTofu, on top of
-`08-packaging`:
+## The stack
 
-- `infra/` — one Spaces bucket (deploy artifacts under `/deploy`,
-  Litestream replica at `/pulse.db`), a volume for the SQLite file that
-  outlives the droplet, the droplet itself, and a firewall (22/80/443 in)
-- `tofu apply` uploads the built jar + templated Caddyfile/litestream.yml
-  to the bucket, then boots the droplet with `ops/cloud-init.yml` as
-  templated user-data — the box installs JDK 26, Caddy, and Litestream,
-  restores the database from a replica if one exists, and starts everything
-- Kill the droplet, `tofu apply` again: infra rebuilds, cloud-init
-  re-bootstraps, Litestream restores the data. That's the sovereignty story
+| Concern | Choice |
+| --- | --- |
+| Language / runtime | Java 26, virtual threads, plain blocking code |
+| Build | Gradle 9.7 (Groovy DSL), Shadow fat jar |
+| Web | Javalin 7 (routing in config, virtual-thread executor) |
+| Templates | JTE, precompiled to classes at build time |
+| Interactivity | htmx 4 (vendored single file), polling fragments |
+| Styling | Tailwind CSS, built once at dev time and committed |
+| Data | SQLite (WAL, `BEGIN IMMEDIATE`) + jOOQ typed SQL, codegen from DDL |
+| Background jobs | JobRunr, state in the same SQLite file |
+| Resilience | Hand-rolled: JDK `HttpClient` timeouts + a retry loop |
+| JSON | Jackson (records serialize as DTOs, no annotations) |
+| Metrics | Micrometer → Prometheus at `/metrics` |
+| Logging | Logback; human-readable in dev, Logstash JSON in prod |
+| Edge | Caddy (automatic HTTPS) |
+| Durability | Litestream replication to object storage |
+| Infrastructure | OpenTofu: droplet + firewall + volume + Spaces bucket |
 
-Deploy:
+Notably absent, on purpose: Spring, any ORM, any SPA framework or JS build
+pipeline, any message broker, Kubernetes.
+
+## Run it locally
+
+```
+./gradlew run          # http://localhost:7070/
+./gradlew test
+./gradlew shadowJar && java -jar build/libs/pulse-all.jar
+```
+
+Add a monitor on the dashboard (try a bogus URL to see a red "down" row —
+checks start within ~15 seconds). JSON API at `/api/monitors` and
+`/api/monitors/{id}/checks`; Prometheus metrics at `/metrics`. The database
+defaults to `./pulse.db` (override with `PULSE_DB`).
+
+## Deploy it
 
 ```
 ./gradlew shadowJar
 cd infra
-tofu init
-tofu apply    # needs do_token, spaces keys, domain (see variables.tf)
-# point the domain's A record at the droplet_ip output
+tofu init && tofu apply   # needs do_token, spaces keys, domain
+# point your domain's A record at the droplet_ip output
 ```
 
-## Previous stage: `08-packaging`
+`tofu apply` uploads the jar and configs to a Spaces bucket and boots a
+droplet whose cloud-init installs JDK 26, Caddy, and Litestream, mounts the
+data volume, restores the SQLite file from a replica if one exists, and
+starts everything. Destroy the droplet and apply again: the box rebuilds
+itself and the data comes back. That is the sovereignty story.
 
-This branch readies Pulse for a real box, on top of `07-observability`:
+## Follow the build, branch by branch
 
-- `shadowJar` finalized with `mergeServiceFiles()` (service-loader
-  registrations from the JDBC driver, logback, and jackson merge instead
-  of colliding)
-- `ops/Caddyfile` — reverse proxy with automatic HTTPS; `/metrics` is
-  blocked at the edge (Prometheus scrapes localhost directly)
-- `ops/litestream.yml` — continuous SQLite replication to S3-compatible
-  object storage; credentials via environment
-- `ops/pulse.service` — hardened systemd unit (`ProtectSystem=strict`,
-  dedicated `pulse` user, JSON logging config, restart on failure)
-- `ops/cloud-init.yml` — bootstraps a fresh Ubuntu host: Temurin JDK 26,
-  Caddy, Litestream (with its own unit), fetches the jar and configs from
-  the deploy bucket, restores the database from a replica if one exists,
-  starts everything. Bucket URL and credentials are templated in by
-  `09-iac`
+Each stage is a branch that compiles, runs, and is tested; each builds on
+the previous one:
 
-The deployable artifact remains a single `pulse-all.jar` plus the SQLite
-file; everything in `ops/` is plain text you can read in one sitting.
+| Branch | Adds |
+| --- | --- |
+| `00-skeleton` | Gradle + JDK 26 toolchain, Javalin hello page, shadow jar |
+| `01-web` | Dashboard shell, vendored htmx + prebuilt Tailwind CSS |
+| `02-data` | `schema.sql`, SQLite + WAL, jOOQ codegen, persisted monitors |
+| `03-presentation` | JTE board + htmx fragment polling every 5s |
+| `04-json` | JSON API with record DTOs |
+| `05-jobs` | JobRunr recurring checker, virtual-thread pinger |
+| `06-resilience` | UP→DOWN detection, webhook notify with hand-rolled retry |
+| `07-observability` | Prometheus `/metrics`, check timer, up/down gauge, JSON logs |
+| `08-packaging` | Caddyfile, litestream.yml, systemd unit, cloud-init |
+| `09-iac` | OpenTofu: droplet, firewall, bucket, volume |
 
-Earlier stages: `00-skeleton` (Gradle 9.7, JDK 26 toolchain, Javalin 7.2.3 on
-virtual threads, Shadow fat jar), `01-web` (dashboard shell, vendored
-htmx 4.0.0 + prebuilt Tailwind CSS), `02-data` (SQLite + WAL, jOOQ codegen
-from `schema.sql`, persisted monitor add/list/delete), `03-presentation`
-(JTE board + 5s htmx polling), `04-json` (read-only JSON API with record
-DTOs), `05-jobs` (JobRunr recurring checker + virtual-thread pinger, all
-state in one SQLite file), `06-resilience` (UP→DOWN webhook notifications
-with hand-rolled retry), `07-observability` (Prometheus `/metrics`, check
-timer + up/down gauge, JSON logging).
-
-## Run it
-
-```
-./gradlew run                          # serves http://localhost:7070/
-./gradlew test                         # tests
-./gradlew shadowJar                    # build fat jar
-java -jar build/libs/pulse-all.jar     # run the fat jar
-```
-
-Requires JDK 26 (the Gradle toolchain will locate or provision it).
-
-## Roadmap
-
-Each stage lives on its own branch, building on the previous one — check out any
-branch and it compiles and runs. See `CLAUDE.md` for the full plan:
-`00-skeleton` → `01-web` → `02-data` → `03-presentation` → `04-json` →
-`05-jobs` → `06-resilience` → `07-observability` → `08-packaging` → `09-iac` → `main`.
+Project layout, golden rules, and design notes live in `CLAUDE.md`; the
+conference deck is in `presentation/`.
