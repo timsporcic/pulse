@@ -36,6 +36,7 @@ public class App {
 
     public static void main(String[] args) {
         var dbFile = Path.of(System.getenv().getOrDefault("PULSE_DB", "pulse.db"));
+        org.sporcic.pulse.jobs.Jobs.start(dbFile);
         create(dbFile).start(7070);
     }
 }

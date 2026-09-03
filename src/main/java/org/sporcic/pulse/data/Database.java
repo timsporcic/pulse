@@ -19,16 +19,25 @@ public final class Database {
 
     /** Opens (creating if needed) the SQLite database and applies db/schema.sql. */
     public static DSLContext open(Path file) {
+        return DSL.using(dataSource(file), SQLDialect.SQLITE);
+    }
+
+    /** The configured DataSource (WAL, busy timeout, FKs), schema applied. */
+    public static SQLiteDataSource dataSource(Path file) {
         var config = new SQLiteConfig();
         config.setJournalMode(SQLiteConfig.JournalMode.WAL);
         config.setBusyTimeout(5000);
         config.enforceForeignKeys(true);
+        // BEGIN IMMEDIATE: take the write lock up front so concurrent
+        // transactions queue on busy_timeout instead of failing with
+        // SQLITE_BUSY_SNAPSHOT on read->write upgrades (JobRunr does those)
+        config.setTransactionMode(SQLiteConfig.TransactionMode.IMMEDIATE);
 
         var dataSource = new SQLiteDataSource(config);
         dataSource.setUrl("jdbc:sqlite:" + file);
 
         applySchema(dataSource);
-        return DSL.using(dataSource, SQLDialect.SQLITE);
+        return dataSource;
     }
 
     private static void applySchema(SQLiteDataSource dataSource) {

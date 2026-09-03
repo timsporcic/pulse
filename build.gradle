@@ -28,6 +28,7 @@ dependencies {
     jooqCodegen 'org.jooq:jooq-meta-extensions:3.21.7'
 
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.2'
+    implementation 'org.jobrunr:jobrunr:7.5.1'
 
     implementation 'org.slf4j:slf4j-api:2.0.18'
     runtimeOnly 'ch.qos.logback:logback-classic:1.6.3'

@@ -69,6 +69,32 @@ public class MonitorRepository {
                 ));
     }
 
+    /**
+     * Enabled monitors whose last check is older than their interval (or that
+     * have never been checked). ISO-8601 UTC strings compare correctly as text.
+     */
+    public List<Monitor> listDue(java.time.Instant now) {
+        var lastCheckedAt = dsl.select(DSL.max(CHECK_RESULT.CHECKED_AT))
+                .from(CHECK_RESULT)
+                .where(CHECK_RESULT.MONITOR_ID.eq(MONITOR.ID))
+                .asField("last_checked_at");
+
+        return dsl.select(MONITOR.fields())
+                .select(lastCheckedAt)
+                .from(MONITOR)
+                .where(MONITOR.ENABLED.eq(1))
+                .orderBy(MONITOR.ID)
+                .fetch(r -> {
+                    var monitor = toMonitor(r.into(MONITOR));
+                    var last = (String) r.get(lastCheckedAt);
+                    var due = last == null
+                            || java.time.Instant.parse(last).plusSeconds(monitor.intervalSecs()).isBefore(now)
+                            || java.time.Instant.parse(last).plusSeconds(monitor.intervalSecs()).equals(now);
+                    return due ? monitor : null;
+                })
+                .stream().filter(java.util.Objects::nonNull).toList();
+    }
+
     public boolean exists(int id) {
         return dsl.fetchExists(dsl.selectFrom(MONITOR).where(MONITOR.ID.eq(id)));
     }

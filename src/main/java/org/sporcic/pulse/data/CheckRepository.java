@@ -15,6 +15,16 @@ public class CheckRepository {
         this.dsl = dsl;
     }
 
+    public void add(int monitorId, String checkedAt, boolean up, Integer statusCode, Integer latencyMs) {
+        dsl.insertInto(CHECK_RESULT)
+                .set(CHECK_RESULT.MONITOR_ID, monitorId)
+                .set(CHECK_RESULT.CHECKED_AT, checkedAt)
+                .set(CHECK_RESULT.UP, up ? 1 : 0)
+                .set(CHECK_RESULT.STATUS_CODE, statusCode)
+                .set(CHECK_RESULT.LATENCY_MS, latencyMs)
+                .execute();
+    }
+
     /** Most recent checks first. */
     public List<Check> listForMonitor(int monitorId, int limit) {
         return dsl.selectFrom(CHECK_RESULT)

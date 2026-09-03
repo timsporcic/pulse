@@ -3,33 +3,34 @@
 A lean uptime monitor — the running example for the _"Lean Java"_ conference talk.
 One process, one SQLite file, server-rendered HTML. Smallness is the feature.
 
-## Current stage: `04-json`
+## Current stage: `05-jobs`
 
-This branch adds the read-only JSON API on top of `03-presentation`:
+This branch makes Pulse actually monitor things, on top of `04-json`:
 
-- `GET /api/monitors` — all monitors as JSON
-- `GET /api/monitors/{id}/checks` — the monitor's checks, newest first
-  (capped at 100), 404 for an unknown monitor
-- The domain records (`Monitor`, `Check`) serialize directly as DTOs —
-  Jackson handles records natively, no annotations
-- `data/CheckRepository` — typed jOOQ reads over `check_result`
-- The interim plain-text `GET /monitors` is retired; the form endpoints
-  (`POST /monitors`, `DELETE /monitors/{id}`) stay, serving the board UI
+- `check/Pinger` — a plain JDK `HttpClient` GET with a 5s connect / 10s
+  request timeout; < 400 is up, anything else (including timeouts and
+  refused connections) is down
+- `jobs/CheckDueMonitorsJob` — pings every *due* monitor concurrently on
+  virtual threads and records each result in `check_result`; a monitor is
+  due when its last check is older than its `interval_secs`
+- JobRunr 7.5.1 runs that job every 15 seconds as a recurring background
+  job; its state lives in the same SQLite file (`jobrunr_*` tables) — no
+  broker, one process, one file
+- SQLite connections now use `BEGIN IMMEDIATE` transactions: writers take
+  the lock up front and queue on the busy timeout, avoiding
+  `SQLITE_BUSY_SNAPSHOT` between JobRunr and the web handlers
+- The board now shows real statuses: add a monitor and it flips from
+  "waiting for first check" to live latency/uptime within ~15 seconds
 
-Try it:
-
-```
-./gradlew run
-curl -d 'name=Example&url=https://example.org' localhost:7070/monitors
-curl localhost:7070/api/monitors
-curl localhost:7070/api/monitors/1/checks
-```
+Try it: `./gradlew run`, open http://localhost:7070/, add any URL you like —
+including a bogus one to see a red "down" row.
 
 Earlier stages: `00-skeleton` (Gradle 9.7, JDK 26 toolchain, Javalin 7.2.3 on
 virtual threads, Shadow fat jar), `01-web` (dashboard shell, vendored
 htmx 4.0.0 + prebuilt Tailwind CSS), `02-data` (SQLite + WAL, jOOQ codegen
 from `schema.sql`, persisted monitor add/list/delete), `03-presentation`
-(JTE board + 5s htmx polling).
+(JTE board + 5s htmx polling), `04-json` (read-only JSON API with record
+DTOs).
 
 ## Run it
 
