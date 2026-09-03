@@ -298,7 +298,7 @@
     <!-- ===================== 1. CHALLENGES ===================== -->
     <section class="divider">
       <span class="kicker">Part 1</span>
-      <h1>The Challenges</h1>
+      <h1>The challenges</h1>
       <div class="rule"></div>
       <div class="timing">~9 min · why lean?</div>
     </section>
@@ -327,9 +327,9 @@
       <span class="kicker">Challenge 03</span>
       <h2>Every dependency is attack surface</h2>
       <ul>
-        <li>More transitive dependencies = a bigger exposure footprint</li>
-        <li>Log4Shell — a logging dependency, transitively everywhere, in apps that never knew they shipped it</li>
-        <li>AI-augmented attackers scan and weaponize that surface faster than ever</li>
+        <li>Every transitive dependency is code you run but never reviewed</li>
+        <li>Log4Shell: a logging library, pulled in transitively, in apps that never knew they shipped it</li>
+        <li>Attackers now scan for exposed versions within hours of a CVE</li>
         <li>You can be breached through code you never chose to include</li>
       </ul>
       <aside class="notes">The Log4Shell scramble is the universal Java memory here — invoke it. Connect forward: fewer dependencies = smaller attack surface. This is the security argument for lean, paid off implicitly across the whole stack.</aside>
@@ -359,14 +359,14 @@
 
     <section class="lead">
       <span class="kicker">The goal</span>
-      <h1>Two north stars:<br><em>comprehension</em> &amp; <em>sovereignty</em>.</h1>
-      <aside class="notes">Name these explicitly. We'll call back to them at EVERY layer and pay them off in the synthesis (S57–S59).</aside>
+      <h1>Two words govern every choice:<br><em>comprehension</em> &amp; <em>sovereignty</em>.</h1>
+      <aside class="notes">Name these explicitly. Call back to them at EVERY layer and pay them off in the synthesis (S57–S59).</aside>
     </section>
 
     <!-- ===================== 2. WHY NOW ===================== -->
     <section class="divider">
       <span class="kicker">Part 2</span>
-      <h1>Why Now?</h1>
+      <h1>Why now?</h1>
       <div class="rule"></div>
       <div class="timing">~6 min · what changed</div>
     </section>
@@ -376,7 +376,7 @@
       <h2>Virtual threads (Project Loom, Java 21)</h2>
       <ul>
         <li>Most framework complexity existed to manage threads &amp; async at scale</li>
-        <li>Write plain, blocking, readable code — and still scale</li>
+        <li>Write plain, blocking, readable code. It still scales.</li>
         <li>Removes the main reason to reach for reactive stacks</li>
       </ul>
       <aside class="notes">This is THE "why now, not 2015" beat. If they take one thing from part 2, it's this.</aside>
@@ -386,7 +386,7 @@
       <span class="kicker">Also new-ish</span>
       <h2>The language grew up</h2>
       <ul>
-        <li>Records — clean, immutable DTOs</li>
+        <li>Records: immutable DTOs in one line</li>
         <li>Text blocks &amp; pattern matching</li>
         <li>A built-in HTTP server and client in the JDK</li>
       </ul>
@@ -396,8 +396,8 @@
       <span class="kicker">Deployment changed too</span>
       <h2>One artifact is now realistic</h2>
       <ul>
-        <li>GraalVM native-image — a single native binary, fast start, low memory</li>
-        <li>jlink — bundle a trimmed runtime with the app</li>
+        <li>GraalVM native-image: one native binary, fast start, low memory</li>
+        <li>jlink: ship a trimmed runtime with the app</li>
       </ul>
     </section>
 
@@ -409,7 +409,7 @@
     <!-- ===================== 3. BUILD THE STACK ===================== -->
     <section class="divider">
       <span class="kicker">Part 3</span>
-      <h1>Building the Stack</h1>
+      <h1>Building the stack</h1>
       <div class="rule"></div>
       <div class="timing">~42 min · fewer layers, deeper code</div>
       <aside class="notes">Recurring motif: a stack diagram that GROWS as we add each layer; footprint/deps shrink. Each layer = problem → lean choice → why → code taste.</aside>
@@ -417,7 +417,7 @@
 
     <section class="content">
       <span class="kicker">Our running example</span>
-      <h2><em>Pulse</em> — a lean uptime monitor</h2>
+      <h2><em>Pulse</em>. A lean uptime monitor.</h2>
       <ul>
         <li>Register URLs → a scheduled loop pings each one</li>
         <li>Results stored in SQLite; a live dashboard shows status &amp; latency</li>
@@ -440,14 +440,14 @@
       <span class="kicker">Layer · Web</span>
       <h2>The choice: <em>Javalin</em></h2>
       <ul>
-        <li>Thin, explicit routing on Jetty — no annotation magic</li>
-        <li>Virtual-thread friendly; tiny swappable JSON seam</li>
+        <li>Thin, explicit routing on Jetty. No annotation magic.</li>
+        <li>Runs on virtual threads; the JSON mapper is one small interface you can swap</li>
         <li>You can read exactly what it does</li>
       </ul>
     </section>
 
     <section class="content">
-      <h3>Javalin — routing</h3>
+      <h3>Javalin routing</h3>
       <pre><code class="language-java" data-trim data-noescape><script type="text/template">
 var app = Javalin.create()
     .get("/",                 dashboard::board)     // JTE page
@@ -456,7 +456,7 @@ var app = Javalin.create()
     .delete("/monitors/{id}", monitorApi::delete)
     .start(8080);
 </script></code></pre>
-      <div class="codecap">No annotations, no scanning — the route table is the whole app. (Virtual threads on by default.)</div>
+      <div class="codecap">No annotations, no scanning. The route table is the whole app, and virtual threads are on by default.</div>
     </section>
 
     <!-- 3b Data -->
@@ -471,7 +471,7 @@ var app = Javalin.create()
 
     <section class="content">
       <span class="kicker">Layer · Data</span>
-      <h2><em>SQLite</em> — the database is a file</h2>
+      <h2><em>SQLite</em>. The database is a file.</h2>
       <ul>
         <li>In-process, zero-ops, no network hop</li>
         <li>Your data is a file you own and can copy</li>
@@ -495,7 +495,7 @@ var app = Javalin.create()
           <div class="label-good">When you outgrow it</div>
           <ul>
             <li>Single-writer is the only real ceiling</li>
-            <li>jOOQ makes the move to Postgres a small step — not a rewrite</li>
+            <li>jOOQ makes the move to Postgres a small step, not a rewrite</li>
           </ul>
         </div>
       </div>
@@ -507,17 +507,17 @@ var app = Javalin.create()
       <span class="kicker">Objection handling</span>
       <h2>Single-writer, met in the wild</h2>
       <ul>
-        <li>Building Pulse: JobRunr and the web handlers write on separate connections — first run died with <code>SQLITE_BUSY_SNAPSHOT</code></li>
-        <li>In WAL mode a read→write transaction can't upgrade its lock once someone else has written — and <code>busy_timeout</code> doesn't apply there</li>
-        <li>The fix is one connection setting: <code>BEGIN IMMEDIATE</code> transactions — take the write lock up front, writers queue politely on the timeout</li>
-        <li>The boundary is real, but it's a line of config — not an outage</li>
+        <li>Building Pulse, the job runner and the web handlers wrote on separate connections. First run died with <code>SQLITE_BUSY_SNAPSHOT</code></li>
+        <li>In WAL mode a read→write transaction can't upgrade its lock once someone else has written; <code>busy_timeout</code> won't save it</li>
+        <li>The fix is one connection setting: <code>BEGIN IMMEDIATE</code>. Writers take the lock up front and queue politely on the timeout</li>
+        <li>The boundary is real, but it's a line of config, not an outage</li>
       </ul>
-      <aside class="notes">The concrete proof for the previous slide. Hit this exact bug wiring JobRunr into the same SQLite file as the app data: JobRunr does read-then-write transactions, a second connection had written in between, boom — busy_snapshot, and busy_timeout can't save a snapshot upgrade. One line (transaction mode IMMEDIATE on the connection config) makes every writer grab the lock at BEGIN and queue on the timeout instead. Point: knowing your data layer's one real constraint beats being insulated from it by three layers of framework.</aside>
+      <aside class="notes">The concrete proof for the previous slide. Hit this exact bug wiring the job runner into the same SQLite file as the app data: it does read-then-write transactions, a second connection had written in between, boom, busy_snapshot. And busy_timeout can't save a snapshot upgrade. One line of connection config, transaction mode IMMEDIATE, makes every writer grab the lock at BEGIN and queue on the timeout instead. The point: knowing your data layer's one real constraint beats being insulated from it by three layers of framework.</aside>
     </section>
 
     <section class="content">
       <span class="kicker">Layer · Data</span>
-      <h2><em>jOOQ</em> — typed SQL, no ORM</h2>
+      <h2><em>jOOQ</em>. Typed SQL, no ORM.</h2>
       <ul>
         <li>Compile-time type-safe queries</li>
         <li>You always know the exact SQL that runs</li>
@@ -536,11 +536,11 @@ MONITOR.NAME            // TableField<…, String>
 MONITOR.ENABLED         // TableField<…, Boolean>
 CHECK_RESULT.LATENCY_MS // TableField<…, Integer>
 </script></code></pre>
-      <div class="codecap">No live DB at build time — codegen reads the DDL. These generated symbols are where the type-safety comes from.</div>
+      <div class="codecap">No live DB at build time; codegen reads the DDL. These generated symbols are where the type-safety comes from.</div>
     </section>
 
     <section class="content">
-      <h3>jOOQ + SQLite — a typed query</h3>
+      <h3>jOOQ + SQLite: a typed query</h3>
       <pre><code class="language-java" data-trim data-noescape><script type="text/template">
 List<Monitor> active = ctx
     .selectFrom(MONITOR)
@@ -548,11 +548,11 @@ List<Monitor> active = ctx
     .orderBy(MONITOR.NAME.asc())
     .fetchInto(Monitor.class);
 </script></code></pre>
-      <div class="codecap">Type-safe at compile time — and the SQL it runs is exactly what you'd expect.</div>
+      <div class="codecap">Type-safe at compile time, and the SQL it runs is exactly what you'd expect.</div>
     </section>
 
     <section class="content">
-      <h3>jOOQ — a real query</h3>
+      <h3>jOOQ: a real query</h3>
       <pre><code class="language-java" data-trim data-noescape><script type="text/template">
 var rows = ctx.select(
         MONITOR.NAME,
@@ -564,11 +564,11 @@ var rows = ctx.select(
     .groupBy(MONITOR.NAME)
     .fetch();
 </script></code></pre>
-      <div class="codecap">A join, a CASE aggregate, a GROUP BY — uptime % per monitor, every piece type-checked.</div>
+      <div class="codecap">A join, a CASE aggregate, a GROUP BY. Uptime % per monitor, every piece type-checked.</div>
     </section>
 
     <section class="content">
-      <h3>jOOQ — writing a result</h3>
+      <h3>jOOQ: writing a result</h3>
       <pre><code class="language-java" data-trim data-noescape><script type="text/template">
 ctx.insertInto(CHECK_RESULT)
    .set(CHECK_RESULT.MONITOR_ID,  m.id())
@@ -578,14 +578,14 @@ ctx.insertInto(CHECK_RESULT)
    .set(CHECK_RESULT.LATENCY_MS,  r.latencyMs())
    .execute();
 </script></code></pre>
-      <div class="codecap">Writes are typed too — a wrong column or type is a compile error, not a 2 a.m. surprise.</div>
+      <div class="codecap">Writes are typed too. A wrong column or type is a compile error, not a 2 a.m. surprise.</div>
     </section>
 
     <section class="content">
       <span class="kicker">Why typed SQL wins</span>
       <h2>The compiler is your migration checker</h2>
       <ul>
-        <li>Rename a column, regenerate — every affected query stops compiling</li>
+        <li>Rename a column, regenerate, and every affected query stops compiling</li>
         <li>Autocomplete for tables and columns; no guessing at strings</li>
         <li>No JPQL, no string SQL, no runtime "column not found"</li>
       </ul>
@@ -596,10 +596,10 @@ ctx.insertInto(CHECK_RESULT)
       <span class="kicker">Not a line in the sand</span>
       <h2>SQLite → Postgres, when you need it</h2>
       <ul>
-        <li>jOOQ is dialect-agnostic — swap the driver, regenerate, and your query code barely changes</li>
-        <li>The only new complexity: running Postgres as a service (it brings its own replication, so Litestream steps aside)</li>
-        <li>Unlocks multi-writer, read replicas, effectively unbounded scale</li>
-        <li>An upgrade path, not a rewrite — SQLite is the starting point, never the ceiling</li>
+        <li>jOOQ speaks both dialects: swap the driver, regenerate, and your query code barely changes</li>
+        <li>The only new complexity is running Postgres itself; it brings its own replication, so Litestream steps aside</li>
+        <li>That buys multi-writer, read replicas, and more scale than you'll use</li>
+        <li>An upgrade path, not a rewrite. SQLite is the starting point, never the ceiling.</li>
       </ul>
       <aside class="notes">The answer to the scale objection. The portability is a payoff of the jOOQ choice — because you didn't tie yourself to an ORM or to SQLite-specific SQL, the data layer moves with a config change, not a rewrite. Effectively infinite scale is one small step away whenever you need it.</aside>
     </section>
@@ -618,8 +618,8 @@ ctx.insertInto(CHECK_RESULT)
       <span class="kicker">Layer · Presentation</span>
       <h2>The choice: <em>JTE</em> / j2html</h2>
       <ul>
-        <li>JTE — compile-time, type-safe templates (the templating analog of jOOQ)</li>
-        <li>j2html — HTML as type-safe Java (by Javalin's author)</li>
+        <li>JTE: compile-time, type-safe templates. jOOQ's approach, applied to HTML.</li>
+        <li>j2html: HTML as type-safe Java, from Javalin's author</li>
       </ul>
     </section>
 
@@ -631,7 +631,7 @@ ctx.insertInto(CHECK_RESULT)
 @param java.util.List<MonitorView> monitors
 @param java.time.Instant now
 </script></code></pre>
-      <div class="codecap">Templates declare typed parameters and compile to Java — a wrong field or type fails the build, not the page load. Hot-reloads in dev.</div>
+      <div class="codecap">Templates declare typed parameters and compile to Java. A wrong field fails the build, not the page load. Hot-reloads in dev.</div>
     </section>
 
     <section class="content">
@@ -663,12 +663,12 @@ public void board(Context ctx) {
   @endfor
 </table>
 </script></code></pre>
-      <div class="codecap">@for, @if, and field access — all checked against the MonitorView record at build time.</div>
+      <div class="codecap">@for, @if, and field access, all checked against the MonitorView record at build time.</div>
     </section>
 
     <section class="content">
       <span class="kicker">Layer · Presentation</span>
-      <h2><em>HTMX</em> — hypermedia, not a SPA</h2>
+      <h2><em>HTMX</em>. Hypermedia, not a SPA.</h2>
       <ul>
         <li>Server returns HTML fragments</li>
         <li>No heavy client framework, no build pipeline</li>
@@ -696,7 +696,7 @@ public void board(Context ctx) {
       <ul>
         <li>Records as DTOs</li>
         <li>Jackson by default; reflection-free Moshi / DSL-JSON for native-image</li>
-        <li>Or skip a binding lib — jOOQ emits JSON on read paths</li>
+        <li>Or skip the binding lib; jOOQ can emit JSON on read paths</li>
       </ul>
       <aside class="notes">[FLEX] — compress to one slide or fold into the data section if running long.</aside>
     </section>
@@ -710,7 +710,7 @@ record MonitorView(String name, String url,
 // Javalin serializes the record straight to JSON
 ctx.json(new MonitorView(m.name(), m.url(), m.up(), m.latencyMs()));
 </script></code></pre>
-      <div class="codecap">Records as DTOs — immutable, explicit, zero ceremony.</div>
+      <div class="codecap">Records as DTOs: immutable, explicit, no ceremony.</div>
     </section>
 
     <!-- 3e Scheduled checks -->
@@ -720,7 +720,7 @@ ctx.json(new MonitorView(m.name(), m.url(), m.up(), m.latencyMs()));
       <ul>
         <li>A <em>ScheduledExecutorService</em> drives the checks on a fixed interval</li>
         <li>A virtual thread per check; the JDK <em>HttpClient</em> pings with a timeout</li>
-        <li>No job library, no broker — the loop lives in your one process</li>
+        <li>No job library, no broker. The loop lives in your one process.</li>
       </ul>
       <aside class="notes">The lean replacement for a background-job library: the JDK already schedules and makes HTTP calls. Reinforces "reach for the stdlib first." Single process, so no distributed-job machinery needed.</aside>
     </section>
@@ -735,7 +735,7 @@ scheduler.scheduleAtFixedRate(() -> {
         Thread.startVirtualThread(() -> checker.check(m));
 }, 0, 60, TimeUnit.SECONDS);
 </script></code></pre>
-      <div class="codecap">One JDK scheduler, a virtual thread per check — each ping is an HttpClient call with a timeout. No library required.</div>
+      <div class="codecap">One JDK scheduler, a virtual thread per check, each ping an HttpClient call with a timeout. No library required.</div>
     </section>
 
     <!-- ===================== 4. DEPLOYMENT ===================== -->
@@ -750,7 +750,7 @@ scheduler.scheduleAtFixedRate(() -> {
       <span class="kicker">First principle</span>
       <h2>SQLite shapes everything</h2>
       <ul>
-        <li>A stateful "pet" on persistent disk — not disposable "cattle"</li>
+        <li>A stateful pet on persistent disk, not disposable cattle</li>
         <li>One droplet with a persistent volume is the <em>right</em> shape</li>
         <li>Kubernetes &amp; serverless are the wrong tool here</li>
       </ul>
@@ -758,11 +758,11 @@ scheduler.scheduleAtFixedRate(() -> {
 
     <section class="content">
       <span class="kicker">Choose your artifact</span>
-      <h2>Three options, increasing leverage</h2>
+      <h2>Three ways to ship it</h2>
       <ul>
-        <li>Fat jar + systemd service — the lean default</li>
-        <li>Docker image — reproducible deploys &amp; rollback</li>
-        <li>GraalVM native binary — smallest footprint, build-tax</li>
+        <li>Fat jar + systemd service: the lean default</li>
+        <li>Docker image: reproducible deploys and rollback</li>
+        <li>GraalVM native binary: smallest footprint, slowest build</li>
       </ul>
     </section>
 
@@ -778,7 +778,7 @@ scheduler.scheduleAtFixedRate(() -> {
 
     <section class="content">
       <span class="kicker">Edge</span>
-      <h2><em>Caddy</em> — automatic HTTPS</h2>
+      <h2><em>Caddy</em>. Automatic HTTPS.</h2>
       <ul>
         <li>Let's Encrypt out of the box, trivial config</li>
         <li>A single Go binary in front of Javalin</li>
@@ -787,7 +787,7 @@ scheduler.scheduleAtFixedRate(() -> {
 
     <section class="content">
       <span class="kicker">Durability</span>
-      <h2><em>Litestream</em> — lose the box, keep the data</h2>
+      <h2><em>Litestream</em>. Lose the box, keep the data.</h2>
       <ul>
         <li>Continuous SQLite replication to object storage</li>
         <li>Point-in-time recovery; restore to a fresh droplet in minutes</li>
@@ -800,8 +800,8 @@ scheduler.scheduleAtFixedRate(() -> {
       <h2>Scale up, not out</h2>
       <ul>
         <li>Vertical: a bigger droplet</li>
-        <li>One modest box goes remarkably far — in-process DB, virtual threads</li>
-        <li>Graduate the data layer only when you truly must</li>
+        <li>A $6 droplet goes further than you'd guess. The DB is in-process; the threads are free.</li>
+        <li>Graduate the data layer when the numbers force you, not before</li>
       </ul>
     </section>
 
@@ -818,14 +818,14 @@ scheduler.scheduleAtFixedRate(() -> {
       <span class="kicker">Provision</span>
       <h2><em>OpenTofu</em></h2>
       <ul>
-        <li>Droplet, firewall, DNS, object storage, volume — declaratively</li>
+        <li>Droplet, firewall, DNS, object storage, volume, all declared in one file</li>
         <li>The community fork that escaped Terraform's relicensing</li>
       </ul>
       <aside class="notes">[DEPTH] — the Terraform → OpenTofu fork is a live example of capture-and-escape. 30-second aside if philosophical tone; skip if pragmatic.</aside>
     </section>
 
     <section class="content">
-      <h3>OpenTofu — a droplet</h3>
+      <h3>OpenTofu: a droplet</h3>
       <pre><code class="language-hcl" data-trim data-noescape><script type="text/template">
 resource "digitalocean_droplet" "pulse" {
   name      = "pulse"
@@ -856,8 +856,8 @@ resource "digitalocean_spaces_bucket" "backups" {
       <span class="kicker">Going further</span>
       <h2>If you want more</h2>
       <ul>
-        <li>NixOS — the whole machine as one reproducible config</li>
-        <li>Pulumi — infrastructure in Java, your home language</li>
+        <li>NixOS: the whole machine as one reproducible config</li>
+        <li>Pulumi: infrastructure in Java, your home language</li>
       </ul>
     </section>
 
@@ -879,7 +879,7 @@ resource "digitalocean_spaces_bucket" "backups" {
       <span class="kicker">Principle</span>
       <h2>Open standards, self-hosted</h2>
       <ul>
-        <li>No SaaS APM — telemetry stays on your box</li>
+        <li>No SaaS APM. Telemetry stays on your box.</li>
         <li>Explicit instrumentation over magic agents</li>
         <li>Same sovereignty logic as the rest of the stack</li>
       </ul>
@@ -889,7 +889,7 @@ resource "digitalocean_spaces_bucket" "backups" {
       <span class="kicker">Metrics</span>
       <h2><em>Micrometer</em> → Prometheus → Grafana</h2>
       <ul>
-        <li>Vendor-neutral metrics facade (works without Spring)</li>
+        <li>Vendor-neutral metrics API; no Spring required</li>
         <li>Javalin plugin exposes HTTP and JVM metrics</li>
       </ul>
     </section>
@@ -918,7 +918,7 @@ resource "digitalocean_spaces_bucket" "backups" {
       <ul>
         <li>Start: structured logs to stdout</li>
         <li>Add: Micrometer + Prometheus + Grafana</li>
-        <li>Then: OTel traces — only when you need to chase latency</li>
+        <li>Then: OTel traces, once you're actually chasing latency</li>
       </ul>
       <aside class="notes">Note: the whole observability backend is self-hosted Go single-binaries beside the app — same pattern as Caddy/Litestream.</aside>
     </section>
@@ -939,7 +939,7 @@ registry.gauge("pulse.monitor.up", m, mon -> mon.up() ? 1 : 0);
     <!-- ===================== 7. WHOLE PICTURE ===================== -->
     <section class="divider">
       <span class="kicker">Part 7</span>
-      <h1>The Complete Picture</h1>
+      <h1>The complete picture</h1>
       <div class="rule"></div>
       <div class="timing">~3 min</div>
     </section>
@@ -1025,9 +1025,9 @@ registry.gauge("pulse.monitor.up", m, mon -> mon.up() ? 1 : 0);
         <li>Every dependency you don't add is one you can't be breached through</li>
         <li>A stack small enough to hold in your head is small enough to audit</li>
         <li>Smaller surface, fewer scrambles when the next Log4Shell lands</li>
-        <li>No SaaS agents — your telemetry never leaves the box</li>
+        <li>No SaaS agents; your telemetry never leaves the box</li>
       </ul>
-      <aside class="notes">Callback to Challenge 03. The payoff: minimal dependencies isn't just comprehension — it's a smaller attack surface by definition. Tie the three north stars together: comprehension = auditable, sovereignty = telemetry stays home, security = less surface.</aside>
+      <aside class="notes">Callback to Challenge 03. The payoff: minimal dependencies means a smaller attack surface by definition, on top of the comprehension win. Tie the themes together: comprehension = auditable, sovereignty = telemetry stays home, security = less to breach.</aside>
     </section>
 
     <section class="lead">
@@ -1036,13 +1036,13 @@ registry.gauge("pulse.monitor.up", m, mon -> mon.up() ? 1 : 0);
 
     <section class="lead">
       <h1>A production app one person can<br><em>understand, own, and run</em>.</h1>
-      <aside class="notes">Pay off the two north stars from S10. This is the emotional peak — let it land before the honesty slide.</aside>
+      <aside class="notes">Pay off comprehension and sovereignty from S10. This is the emotional peak. Let it land before the honesty slide.</aside>
     </section>
 
     <!-- ===================== 8. WHEN NOT TO ===================== -->
     <section class="divider">
       <span class="kicker">Part 8</span>
-      <h1>When NOT to Use This</h1>
+      <h1>When not to use this</h1>
       <div class="rule"></div>
       <div class="timing">~4 min · honest tradeoffs</div>
     </section>
@@ -1067,7 +1067,7 @@ registry.gauge("pulse.monitor.up", m, mon -> mon.up() ? 1 : 0);
       <span class="kicker">Resources</span>
       <h2>Take it with you</h2>
       <ul>
-        <li>Demo repo — <a href="https://github.com/timsporcic/pulse">github.com/timsporic/pulse</a></li>
+        <li>Demo repo: <a href="https://github.com/timsporcic/pulse">github.com/timsporcic/pulse</a></li>
           <li>Docs: Javalin · jOOQ · JTE · Litestream · OpenTofu</li>
           <li>Reading: <a href="https://www.terrygodier.com/the-boring-internet/ascii">The Boring Internet</a></li>
       </ul>
