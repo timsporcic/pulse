@@ -21,6 +21,7 @@ dependencies {
     implementation platform('io.javalin:javalin-bom:7.2.3')
     implementation 'io.javalin:javalin'
     implementation 'io.javalin:javalin-rendering-jte'
+    implementation 'io.javalin:javalin-micrometer'
     implementation 'gg.jte:jte:3.2.4'
 
     implementation 'org.jooq:jooq:3.21.7'
@@ -30,8 +31,11 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.2'
     implementation 'org.jobrunr:jobrunr:7.5.1'
 
+    implementation 'io.micrometer:micrometer-registry-prometheus:1.17.1'
+
     implementation 'org.slf4j:slf4j-api:2.0.18'
     runtimeOnly 'ch.qos.logback:logback-classic:1.6.3'
+    runtimeOnly 'net.logstash.logback:logstash-logback-encoder:9.0'
 
     testImplementation 'io.javalin:javalin-testtools'
     testImplementation 'org.junit.jupiter:junit-jupiter:6.1.3'

@@ -26,7 +26,7 @@ public final class Jobs {
 
     private Jobs() {}
 
-    public static void start(Path dbFile) {
+    public static void start(Path dbFile, io.micrometer.core.instrument.MeterRegistry registry) {
         var dataSource = Database.dataSource(dbFile);
         var dsl = DSL.using(dataSource, SQLDialect.SQLITE);
         var monitors = new MonitorRepository(dsl);
@@ -38,7 +38,8 @@ public final class Jobs {
         var scheduler = new AtomicReference<JobScheduler>();
         var checkJob = new CheckDueMonitorsJob(monitors, checks, new Pinger(),
                 monitorId -> scheduler.get()
-                        .enqueue((IocJobLambda<NotifyDownJob>) x -> x.notifyDown(monitorId)));
+                        .enqueue((IocJobLambda<NotifyDownJob>) x -> x.notifyDown(monitorId)),
+                new org.sporcic.pulse.metrics.CheckMetrics(registry));
 
         var jobScheduler = JobRunr.configure()
                 .useStorageProvider(new SqLiteStorageProvider(dataSource))

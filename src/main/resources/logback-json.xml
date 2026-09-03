@@ -1,0 +1,12 @@
+<!-- Deployable logging config: structured JSON to stdout for journald/collectors.
+     Activate with -Dlogback.configurationFile=logback-json.xml (the systemd unit
+     does this). The default logback.xml stays human-readable for dev. -->
+<configuration>
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="JSON"/>
+    </root>
+</configuration>

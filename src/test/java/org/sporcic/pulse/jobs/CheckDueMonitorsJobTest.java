@@ -30,6 +30,8 @@ class CheckDueMonitorsJobTest {
     CheckRepository checks;
     CheckDueMonitorsJob job;
     java.util.List<Integer> notifiedMonitorIds = new java.util.ArrayList<>();
+    io.micrometer.prometheusmetrics.PrometheusMeterRegistry registry =
+            org.sporcic.pulse.metrics.Metrics.newRegistry();
 
     @BeforeEach
     void setUp() {
@@ -40,7 +42,8 @@ class CheckDueMonitorsJobTest {
         dsl = Database.open(tempDir.resolve("pulse-test.db"));
         monitors = new MonitorRepository(dsl);
         checks = new CheckRepository(dsl);
-        job = new CheckDueMonitorsJob(monitors, checks, new Pinger(), notifiedMonitorIds::add);
+        job = new CheckDueMonitorsJob(monitors, checks, new Pinger(), notifiedMonitorIds::add,
+                new org.sporcic.pulse.metrics.CheckMetrics(registry));
     }
 
     @AfterEach
@@ -150,6 +153,19 @@ class CheckDueMonitorsJobTest {
         job.run();
 
         assertTrue(notifiedMonitorIds.isEmpty());
+    }
+
+    @Test
+    void checksAreRecordedInMetrics() {
+        monitors.add("Watched", targetUrl("/ok"), 60, null);
+        monitors.add("Fallen", targetUrl("/broken"), 60, null);
+
+        job.run();
+
+        var scrape = registry.scrape();
+        assertTrue(scrape.contains("pulse_monitor_up{monitor=\"Watched\"} 1.0"));
+        assertTrue(scrape.contains("pulse_monitor_up{monitor=\"Fallen\"} 0.0"));
+        assertTrue(scrape.contains("pulse_check_seconds_count{monitor=\"Watched\"} 1"));
     }
 
     @Test

@@ -27,12 +27,15 @@ public class CheckDueMonitorsJob {
     private final CheckRepository checks;
     private final Pinger pinger;
     private final DownListener onDown;
+    private final org.sporcic.pulse.metrics.CheckMetrics metrics;
 
-    public CheckDueMonitorsJob(MonitorRepository monitors, CheckRepository checks, Pinger pinger, DownListener onDown) {
+    public CheckDueMonitorsJob(MonitorRepository monitors, CheckRepository checks, Pinger pinger,
+                               DownListener onDown, org.sporcic.pulse.metrics.CheckMetrics metrics) {
         this.monitors = monitors;
         this.checks = checks;
         this.pinger = pinger;
         this.onDown = onDown;
+        this.metrics = metrics;
     }
 
     public void run() {
@@ -51,8 +54,11 @@ public class CheckDueMonitorsJob {
         var previous = checks.listForMonitor(monitor.id(), 1);
         var wasUp = !previous.isEmpty() && previous.get(0).up();
 
+        var started = System.nanoTime();
         var result = pinger.ping(monitor.url());
+        var durationMs = (System.nanoTime() - started) / 1_000_000;
         checks.add(monitor.id(), Instant.now().toString(), result.up(), result.statusCode(), result.latencyMs());
+        metrics.record(monitor, result, durationMs);
         log.info("checked {} ({}): {}", monitor.name(), monitor.url(), result.up() ? "up" : "DOWN");
 
         var hasNotifyUrl = monitor.notifyUrl() != null && !monitor.notifyUrl().isBlank();

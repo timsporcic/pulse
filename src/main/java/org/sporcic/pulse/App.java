@@ -17,10 +17,19 @@ import java.nio.file.Path;
 public class App {
 
     public static Javalin create(Path dbFile) {
+        return create(dbFile, org.sporcic.pulse.metrics.Metrics.newRegistry());
+    }
+
+    public static Javalin create(Path dbFile, io.micrometer.prometheusmetrics.PrometheusMeterRegistry registry) {
         var dsl = Database.open(dbFile);
         var repository = new MonitorRepository(dsl);
 
         return Javalin.create(config -> {
+            config.registerPlugin(new io.javalin.micrometer.MicrometerPlugin(micrometer ->
+                    micrometer.registry = registry));
+            config.routes.get("/metrics", ctx -> ctx
+                    .contentType("text/plain; version=0.0.4; charset=utf-8")
+                    .result(registry.scrape()));
             config.concurrency.useVirtualThreads = true;
             config.staticFiles.add(staticFiles -> {
                 staticFiles.directory = "/public";
@@ -36,7 +45,8 @@ public class App {
 
     public static void main(String[] args) {
         var dbFile = Path.of(System.getenv().getOrDefault("PULSE_DB", "pulse.db"));
-        org.sporcic.pulse.jobs.Jobs.start(dbFile);
-        create(dbFile).start(7070);
+        var registry = org.sporcic.pulse.metrics.Metrics.newRegistry();
+        org.sporcic.pulse.jobs.Jobs.start(dbFile, registry);
+        create(dbFile, registry).start(7070);
     }
 }
