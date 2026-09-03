@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lean Java</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/white.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --ink: #16181d;
+      --muted: #5b6470;
+      --accent: #0e7a52;       /* tamed terminal green */
+      --accent-tint: #ecf6f1;
+      --line: #e2e6ea;
+    }
+
+    .reveal {
+      font-family: 'Archivo', sans-serif;
+      font-size: 34px;
+      color: var(--ink);
+      font-weight: 400;
+    }
+    .reveal .slides { text-align: left; }
+    .reveal .slides section { height: 100%; }
+
+    .reveal h1, .reveal h2, .reveal h3 {
+      font-family: 'Archivo', sans-serif;
+      color: var(--ink);
+      text-transform: none;
+      letter-spacing: -0.02em;
+      line-height: 1.04;
+      font-weight: 800;
+      margin: 0 0 0.4em 0;
+    }
+    .reveal h1 { font-size: 2.0em; }
+    .reveal h2 { font-size: 1.45em; }
+    .reveal h3 { font-size: 1.05em; font-weight: 700; }
+
+    .reveal p, .reveal li { line-height: 1.4; }
+    .reveal strong { color: var(--accent); font-weight: 700; }
+    .reveal em { font-style: normal; color: var(--accent); font-weight: 600; }
+
+    /* kicker label */
+    .kicker {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.42em;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.9em;
+      display: block;
+      font-weight: 500;
+    }
+
+    /* lists */
+    .reveal ul { list-style: none; margin-left: 0; }
+    .reveal ul li {
+      position: relative;
+      padding-left: 1.1em;
+      margin-bottom: 0.55em;
+    }
+    .reveal ul li::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 0.55em;
+      width: 0.42em; height: 0.42em;
+      background: var(--accent);
+      border-radius: 1px;
+    }
+    .reveal li .sub { color: var(--muted); font-size: 0.82em; display:block; padding-left:0; }
+
+    /* divider slides */
+    .divider { display:flex; flex-direction:column; justify-content:center; height:100%; }
+    .divider h1 { font-size: 2.7em; font-weight: 900; }
+    .divider .rule {
+      width: 90px; height: 5px; background: var(--accent);
+      margin: 0.1em 0 0.5em 0; border-radius: 2px;
+    }
+    .divider .timing {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.5em; color: var(--muted); letter-spacing: 0.05em;
+    }
+
+    /* big lead statement slides */
+    .lead { display:flex; flex-direction:column; justify-content:center; height:100%; }
+    .lead h1 { font-size: 2.2em; line-height: 1.08; }
+    .lead .kicker { font-size: 0.5em; }
+
+    /* title slide */
+    .title-slide { display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; height:100%; }
+    .title-slide .hero { max-height: 430px; max-width: 86%; height: auto; margin-bottom: 0.5em; }
+    .title-slide h1 { font-size: 3.4em; font-weight: 900; letter-spacing: -0.03em; }
+    .title-slide .sub { font-size: 0.95em; color: var(--muted); font-weight: 500; margin-top: 0.2em; }
+    .title-slide .by {
+      font-family:'JetBrains Mono', monospace; font-size: 0.5em; color: var(--ink);
+      margin-top: 1.6em; letter-spacing: 0.04em;
+    }
+    .title-slide .bars { display:flex; gap:6px; margin-bottom: 1.2em; }
+    .title-slide .bars span { width: 26px; height: 8px; background: var(--accent); border-radius: 2px; opacity:0.25; }
+    .title-slide .bars span:nth-child(1){opacity:1}
+    .title-slide .bars span:nth-child(2){opacity:0.7}
+    .title-slide .bars span:nth-child(3){opacity:0.45}
+
+    /* [CODE] placeholder */
+    .codeslot {
+      border: 2px dashed var(--accent);
+      background: var(--accent-tint);
+      border-radius: 10px;
+      padding: 0.9em 1.1em;
+      margin-top: 0.6em;
+    }
+    .codeslot .lbl {
+      font-family:'JetBrains Mono', monospace;
+      color: var(--accent); font-weight: 700; letter-spacing: 0.15em;
+      font-size: 0.7em;
+    }
+    .codeslot .desc {
+      font-family:'JetBrains Mono', monospace;
+      color: var(--muted); font-size: 0.6em; margin-top: 0.4em; line-height:1.45;
+    }
+
+    /* faint flex/depth tag, top-right */
+    .tag {
+      position: absolute; top: 0; right: 0;
+      font-family:'JetBrains Mono', monospace;
+      font-size: 0.42em; letter-spacing: 0.12em;
+      color: var(--muted); opacity: 0.55;
+    }
+
+    /* two-column problem -> choice */
+    .cols { display:flex; gap: 1.2em; }
+    .cols > div { flex: 1; }
+    .label-bad, .label-good {
+      font-family:'JetBrains Mono', monospace; font-size: 0.55em;
+      letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 0.5em;
+    }
+    .label-bad { color: var(--muted); }
+    .label-good { color: var(--accent); }
+
+    /* slide number */
+    .reveal .slide-number {
+      font-family:'JetBrains Mono', monospace;
+      background: transparent; color: var(--muted); font-size: 14px;
+    }
+
+    .footer {
+      position: fixed; bottom: 12px; left: 18px;
+      font-family:'JetBrains Mono', monospace; font-size: 12px;
+      color: var(--muted); opacity: 0.6; letter-spacing: 0.1em; z-index: 5;
+    }
+    .reveal .stack-list { font-size: 0.78em; }
+
+    /* code blocks */
+    .reveal pre {
+      width: 100%;
+      box-shadow: none;
+      margin: 0.4em 0 0 0;
+      font-size: 0.5em;
+      line-height: 1.5;
+    }
+    .reveal li code, .reveal p code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82em;
+      background: #f6f8fa;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      padding: 0.05em 0.35em;
+    }
+    .reveal pre code {
+      font-family: 'JetBrains Mono', monospace;
+      background: #f6f8fa;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--accent);
+      border-radius: 8px;
+      padding: 0.9em 1.1em;
+      max-height: none;
+      tab-size: 2;
+    }
+    .reveal .codecap {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.5em; color: var(--muted);
+      margin-top: 0.7em; letter-spacing: 0.04em;
+    }
+
+    /* stack diagram (inline SVG) */
+    .reveal .stackfig {
+      display: flex;
+      justify-content: center;
+      margin-top: 0.3em;
+    }
+    .reveal .stackfig svg {
+      max-height: 545px;
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* whois / speaker slide */
+    .whois .whois-wrap { display:flex; gap: 30px; align-items: flex-start; margin-top: 0.25em; }
+    .whois .whois-photos { display:flex; flex-direction:column; gap: 12px; flex: 0 0 190px; }
+    .whois .whois-photos figure { margin:0; }
+    .whois .whois-photos img { width: 190px; height:auto; display:block; border-radius: 8px; border: 1px solid var(--line); }
+    .whois .whois-photos figcaption { font-family:'JetBrains Mono',monospace; font-size: 0.4em; color: var(--accent); margin-top: 5px; letter-spacing: 0.02em; }
+    .whois .term { flex: 1; min-width: 0; background:#15171c; border-radius: 12px; overflow:hidden; box-shadow: 0 12px 32px rgba(20,24,30,0.18); }
+    .whois .term-bar { display:flex; align-items:center; gap:7px; padding: 11px 15px; background:#22272f; }
+    .whois .term-bar .dot { width:11px; height:11px; border-radius:50%; display:inline-block; }
+    .whois .term-bar .r { background:#ff5f56; }
+    .whois .term-bar .y { background:#ffbd2e; }
+    .whois .term-bar .g { background:#27c93f; }
+    .whois .term-title { margin-left:8px; font-family:'JetBrains Mono',monospace; font-size:0.42em; color:#8a93a0; }
+    .whois .term-body { margin:0; padding: 16px 22px 20px; background:#15171c; color:#e6e9ec; font-family:'JetBrains Mono',monospace; font-size:0.46em; line-height:1.7; border:none; box-shadow:none; white-space:pre; overflow-x:auto; }
+    .whois .term-body .k { color:#46d98a; }
+    .whois .term-body .p { color:#46d98a; font-weight:700; }
+    .whois .term-body .cursor { color:#46d98a; animation: blink 1.1s step-end infinite; }
+    @keyframes blink { 50% { opacity:0; } }
+  </style>
+</head>
+<body>
+<div class="footer">LEAN JAVA</div>
+<div class="reveal">
+  <div class="slides">
+
+    <!-- ===================== 0. HOOK ===================== -->
+    <section class="title-slide">
+      <img class="hero" src="images/lean-java.png" alt="Lean Java">
+      <div class="sub">Building production apps you can hold in your head</div>
+      <div class="by">// Tim Sporcic &nbsp;·&nbsp; &lt;tim@sporcic.org&gt;</div>
+      <aside class="notes">~2 min hook total. Set energy: this is a build talk — by the end they'll have a whole stack + deployment in their head.</aside>
+    </section>
+
+    <section class="content whois">
+      <span class="kicker">$ whoami</span>
+      <div class="whois-wrap">
+        <div class="whois-photos">
+          <figure>
+            <img src="images/desert-storm.jpg" alt="Tim in a USAF flight suit during a Desert Storm-era deployment">
+            <figcaption>// USAF · Desert Storm</figcaption>
+          </figure>
+          <figure>
+            <img src="images/guitar.jpg" alt="Tim playing a Gibson Les Paul guitar">
+            <figcaption>// off-hours · jam band</figcaption>
+          </figure>
+        </div>
+        <div class="term">
+          <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">whois — timsporcic</span></div>
+<pre class="term-body"><span class="p">$</span> whois timsporcic
+
+<span class="k">name</span>        Tim Sporcic
+<span class="k">handle</span>      @TimSporcic
+<span class="k">role</span>        Director, Application Development @ USAA
+            └─ Payments Hub team · Payments Technology
+<span class="k">exp</span>         25+ yrs Java — engineer · architect · eng manager
+<span class="k">service</span>     USAF · 10 yrs · Airborne Cryptologic Language Analyst
+            └─ Desert Storm · Haiti · Bosnia
+<span class="k">music</span>       bass &amp; guitar with jam bands
+<span class="k">also</span>        UNT Dad
+
+<span class="p">$</span> <span class="cursor">█</span></pre>
+        </div>
+      </div>
+      <aside class="notes">The whoami slide — keep it to ~45-60s. Credibility (USAA payments leadership, 25+ yrs Java, USAF linguist) plus a human note (guitar, UNT dad), then move on.</aside>
+    </section>
+
+    <section class="content">
+      <span class="kicker">The problem in the room</span>
+      <h2>A "hello world" service pulls 200 dependencies</h2>
+      <ul>
+        <li>Nobody on the team can describe the whole stack</li>
+        <li>You assemble layers you couldn't rebuild or reason about</li>
+        <li>Slow startup, heavy memory, behavior driven by reflection you can't read</li>
+      </ul>
+      <aside class="notes">Get a show of hands: who fully understands every dependency in their main service? Nobody. That's the felt problem.</aside>
+    </section>
+
+    <section class="lead">
+      <span class="kicker">Thesis</span>
+      <h1>The reasons we reached for heavy frameworks have mostly <em>evaporated</em>.</h1>
+      <aside class="notes">This is the spine. We'll prove it layer by layer. Say it plainly here.</aside>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Where we're going</span>
+      <h2>The finished app is one artifact + a file</h2>
+      <ul>
+        <li>A single deployable + a SQLite file on one box</li>
+        <li>Fully reconstructable from a git repo and a backup bucket</li>
+        <li>"By the end, you'll know how to build <em>and</em> run this"</li>
+      </ul>
+      <aside class="notes">Show the end state up front so the build-up has a destination. Tease the final architecture slide (S57).</aside>
+    </section>
+
+    <!-- ===================== 1. CHALLENGES ===================== -->
+    <section class="divider">
+      <span class="kicker">Part 1</span>
+      <h1>The Challenges</h1>
+      <div class="rule"></div>
+      <div class="timing">~9 min · why lean?</div>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Challenge 01</span>
+      <h2>Weight &amp; magic</h2>
+      <ul>
+        <li>Runtime reflection and annotation-driven behavior you can't follow by reading code</li>
+        <li>Slow startup, large memory footprint</li>
+        <li>Convention you have to learn before you can be productive</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Challenge 02</span>
+      <h2>The comprehension cost</h2>
+      <ul>
+        <li>Deep, opaque transitive dependency trees</li>
+        <li>The whole system is bigger than any one head can hold</li>
+        <li>Debugging means spelunking through framework internals</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Challenge 03</span>
+      <h2>Every dependency is attack surface</h2>
+      <ul>
+        <li>More transitive dependencies = a bigger exposure footprint</li>
+        <li>Log4Shell — a logging dependency, transitively everywhere, in apps that never knew they shipped it</li>
+        <li>AI-augmented attackers scan and weaponize that surface faster than ever</li>
+        <li>You can be breached through code you never chose to include</li>
+      </ul>
+      <aside class="notes">The Log4Shell scramble is the universal Java memory here — invoke it. Connect forward: fewer dependencies = smaller attack surface. This is the security argument for lean, paid off implicitly across the whole stack.</aside>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Challenge 04</span>
+      <h2>Operational complexity</h2>
+      <ul>
+        <li>Cloud-native sprawl and orchestration for apps that don't need it</li>
+        <li>Vendor lock-in; your telemetry and data leave your control</li>
+        <li>The deploy is as hard to understand as the app</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <span class="tag">[DEPTH]</span>
+      <span class="kicker">Challenge 05</span>
+      <h2>Complexity you didn't choose</h2>
+      <ul>
+        <li>Every individual convenience was rational</li>
+        <li>The aggregate is a system nobody decided on</li>
+        <li>Convenience is the solvent of control</li>
+      </ul>
+      <aside class="notes">[DEPTH] — dial up or down depending on tone choice. This is the philosophical hook (sovereignty/anti-enshitification). If pragmatic tone, keep to 20 seconds.</aside>
+    </section>
+
+    <section class="lead">
+      <span class="kicker">The goal</span>
+      <h1>Two north stars:<br><em>comprehension</em> &amp; <em>sovereignty</em>.</h1>
+      <aside class="notes">Name these explicitly. We'll call back to them at EVERY layer and pay them off in the synthesis (S57–S59).</aside>
+    </section>
+
+    <!-- ===================== 2. WHY NOW ===================== -->
+    <section class="divider">
+      <span class="kicker">Part 2</span>
+      <h1>Why Now?</h1>
+      <div class="rule"></div>
+      <div class="timing">~6 min · what changed</div>
+    </section>
+
+    <section class="content">
+      <span class="kicker">The headline</span>
+      <h2>Virtual threads (Project Loom, Java 21)</h2>
+      <ul>
+        <li>Most framework complexity existed to manage threads &amp; async at scale</li>
+        <li>Write plain, blocking, readable code — and still scale</li>
+        <li>Removes the main reason to reach for reactive stacks</li>
+      </ul>
+      <aside class="notes">This is THE "why now, not 2015" beat. If they take one thing from part 2, it's this.</aside>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Also new-ish</span>
+      <h2>The language grew up</h2>
+      <ul>
+        <li>Records — clean, immutable DTOs</li>
+        <li>Text blocks &amp; pattern matching</li>
+        <li>A built-in HTTP server and client in the JDK</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Deployment changed too</span>
+      <h2>One artifact is now realistic</h2>
+      <ul>
+        <li>GraalVM native-image — a single native binary, fast start, low memory</li>
+        <li>jlink — bundle a trimmed runtime with the app</li>
+      </ul>
+    </section>
+
+    <section class="lead">
+      <h1>Lean Java isn't nostalgia.<br>It's a <em>2026 capability</em>.</h1>
+      <aside class="notes">Close part 2 on this. Transition into the build.</aside>
+    </section>
+
+    <!-- ===================== 3. BUILD THE STACK ===================== -->
+    <section class="divider">
+      <span class="kicker">Part 3</span>
+      <h1>Building the Stack</h1>
+      <div class="rule"></div>
+      <div class="timing">~42 min · fewer layers, deeper code</div>
+      <aside class="notes">Recurring motif: a stack diagram that GROWS as we add each layer; footprint/deps shrink. Each layer = problem → lean choice → why → code taste.</aside>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Our running example</span>
+      <h2><em>Pulse</em> — a lean uptime monitor</h2>
+      <ul>
+        <li>Register URLs → a scheduled loop pings each one</li>
+        <li>Results stored in SQLite; a live dashboard shows status &amp; latency</li>
+        <li>Two tables, a handful of routes, plain JDK scheduling</li>
+      </ul>
+      <aside class="notes">Introduce the running example so every snippet has a home. The domain is trivial on purpose — the point is the stack, not the app. Tables: monitor + check. Checks run on a JDK scheduler, no job library.</aside>
+    </section>
+
+    <!-- 3a Web -->
+    <section class="content">
+      <span class="kicker">Layer · Web</span>
+      <h2>The problem: Spring MVC ceremony</h2>
+      <ul>
+        <li>Annotations, component scanning, magic wiring</li>
+        <li>A lot of machinery before your first route responds</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Layer · Web</span>
+      <h2>The choice: <em>Javalin</em></h2>
+      <ul>
+        <li>Thin, explicit routing on Jetty — no annotation magic</li>
+        <li>Virtual-thread friendly; tiny swappable JSON seam</li>
+        <li>You can read exactly what it does</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <h3>Javalin — routing</h3>
+      <pre><code class="language-java" data-trim data-noescape><script type="text/template">
+var app = Javalin.create()
+    .get("/",                 dashboard::board)     // JTE page
+    .get("/api/monitors",     monitorApi::list)     // JSON
+    .post("/monitors",        monitorApi::create)
+    .delete("/monitors/{id}", monitorApi::delete)
+    .start(8080);
+</script></code></pre>
+      <div class="codecap">No annotations, no scanning — the route table is the whole app. (Virtual threads on by default.)</div>
+    </section>
+
+    <!-- 3b Data -->
+    <section class="content">
+      <span class="kicker">Layer · Data</span>
+      <h2>The problem: ORM magic</h2>
+      <ul>
+        <li>Hibernate/JPA hides the query that actually runs</li>
+        <li>Lazy loading, N+1, surprise SQL</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Layer · Data</span>
+      <h2><em>SQLite</em> — the database is a file</h2>
+      <ul>
+        <li>In-process, zero-ops, no network hop</li>
+        <li>Your data is a file you own and can copy</li>
+        <li>Fast, simple, sovereign</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <span class="tag">[CORE · expect pushback]</span>
+      <span class="kicker">Objection handling</span>
+      <h2>"SQLite in production?!"</h2>
+      <div class="cols">
+        <div>
+          <div class="label-good">When it's right</div>
+          <ul>
+            <li>Single-node apps</li>
+            <li>Read-heavy, fast, simple</li>
+          </ul>
+        </div>
+        <div>
+          <div class="label-good">When you outgrow it</div>
+          <ul>
+            <li>Single-writer is the only real ceiling</li>
+            <li>jOOQ makes the move to Postgres a small step — not a rewrite</li>
+          </ul>
+        </div>
+      </div>
+      <aside class="notes">Centerpiece and most contested. Frame single-writer as a known boundary with a cheap, well-lit exit — not a risk. SQLite is a starting point, never a ceiling.</aside>
+    </section>
+
+    <section class="content">
+      <span class="tag">[war story]</span>
+      <span class="kicker">Objection handling</span>
+      <h2>Single-writer, met in the wild</h2>
+      <ul>
+        <li>Building Pulse: JobRunr and the web handlers write on separate connections — first run died with <code>SQLITE_BUSY_SNAPSHOT</code></li>
+        <li>In WAL mode a read→write transaction can't upgrade its lock once someone else has written — and <code>busy_timeout</code> doesn't apply there</li>
+        <li>The fix is one connection setting: <code>BEGIN IMMEDIATE</code> transactions — take the write lock up front, writers queue politely on the timeout</li>
+        <li>The boundary is real, but it's a line of config — not an outage</li>
+      </ul>
+      <aside class="notes">The concrete proof for the previous slide. Hit this exact bug wiring JobRunr into the same SQLite file as the app data: JobRunr does read-then-write transactions, a second connection had written in between, boom — busy_snapshot, and busy_timeout can't save a snapshot upgrade. One line (transaction mode IMMEDIATE on the connection config) makes every writer grab the lock at BEGIN and queue on the timeout instead. Point: knowing your data layer's one real constraint beats being insulated from it by three layers of framework.</aside>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Layer · Data</span>
+      <h2><em>jOOQ</em> — typed SQL, no ORM</h2>
+      <ul>
+        <li>Compile-time type-safe queries</li>
+        <li>You always know the exact SQL that runs</li>
+        <li>Free &amp; open for open-source databases (incl. SQLite)</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Layer · Data · codegen</span>
+      <h2>Your schema becomes types</h2>
+      <pre><code class="language-java" data-trim data-noescape><script type="text/template">
+// build runs jOOQ codegen against schema.sql (offline, via DDLDatabase)
+// → generated, fully-typed table & column references:
+
+MONITOR.NAME            // TableField<…, String>
+MONITOR.ENABLED         // TableField<…, Boolean>
+CHECK_RESULT.LATENCY_MS // TableField<…, Integer>
+</script></code></pre>
+      <div class="codecap">No live DB at build time — codegen reads the DDL. These generated symbols are where the type-safety comes from.</div>
+    </section>
+
+    <section class="content">
+      <h3>jOOQ + SQLite — a typed query</h3>
+      <pre><code class="language-java" data-trim data-noescape><script type="text/template">
+List<Monitor> active = ctx
+    .selectFrom(MONITOR)
+    .where(MONITOR.ENABLED.isTrue())
+    .orderBy(MONITOR.NAME.asc())
+    .fetchInto(Monitor.class);
+</script></code></pre>
+      <div class="codecap">Type-safe at compile time — and the SQL it runs is exactly what you'd expect.</div>
+    </section>
+
+    <section class="content">
+      <h3>jOOQ — a real query</h3>
+      <pre><code class="language-java" data-trim data-noescape><script type="text/template">
+var rows = ctx.select(
+        MONITOR.NAME,
+        avg(when(CHECK_RESULT.UP.isTrue(), 1).otherwise(0)).as("uptime"),
+        avg(CHECK_RESULT.LATENCY_MS).as("avg_ms"))
+    .from(MONITOR)
+    .join(CHECK_RESULT).on(CHECK_RESULT.MONITOR_ID.eq(MONITOR.ID))
+    .where(CHECK_RESULT.CHECKED_AT.gt(since))
+    .groupBy(MONITOR.NAME)
+    .fetch();
+</script></code></pre>
+      <div class="codecap">A join, a CASE aggregate, a GROUP BY — uptime % per monitor, every piece type-checked.</div>
+    </section>
+
+    <section class="content">
+      <h3>jOOQ — writing a result</h3>
+      <pre><code class="language-java" data-trim data-noescape><script type="text/template">
+ctx.insertInto(CHECK_RESULT)
+   .set(CHECK_RESULT.MONITOR_ID,  m.id())
+   .set(CHECK_RESULT.CHECKED_AT,  Instant.now().toString())
+   .set(CHECK_RESULT.UP,          r.up())
+   .set(CHECK_RESULT.STATUS_CODE, r.statusCode())
+   .set(CHECK_RESULT.LATENCY_MS,  r.latencyMs())
+   .execute();
+</script></code></pre>
+      <div class="codecap">Writes are typed too — a wrong column or type is a compile error, not a 2 a.m. surprise.</div>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Why typed SQL wins</span>
+      <h2>The compiler is your migration checker</h2>
+      <ul>
+        <li>Rename a column, regenerate — every affected query stops compiling</li>
+        <li>Autocomplete for tables and columns; no guessing at strings</li>
+        <li>No JPQL, no string SQL, no runtime "column not found"</li>
+      </ul>
+      <aside class="notes">The emotional sell for a JPA / string-SQL audience: refactoring the schema surfaces every break at compile time. Contrast with a typo in a SQL string that ships to prod.</aside>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Not a line in the sand</span>
+      <h2>SQLite → Postgres, when you need it</h2>
+      <ul>
+        <li>jOOQ is dialect-agnostic — swap the driver, regenerate, and your query code barely changes</li>
+        <li>The only new complexity: running Postgres as a service (it brings its own replication, so Litestream steps aside)</li>
+        <li>Unlocks multi-writer, read replicas, effectively unbounded scale</li>
+        <li>An upgrade path, not a rewrite — SQLite is the starting point, never the ceiling</li>
+      </ul>
+      <aside class="notes">The answer to the scale objection. The portability is a payoff of the jOOQ choice — because you didn't tie yourself to an ORM or to SQLite-specific SQL, the data layer moves with a config change, not a rewrite. Effectively infinite scale is one small step away whenever you need it.</aside>
+    </section>
+
+    <!-- 3c Presentation -->
+    <section class="content">
+      <span class="kicker">Layer · Presentation</span>
+      <h2>The problem: heavy on both ends</h2>
+      <ul>
+        <li>Thymeleaf is a heavy runtime templating engine</li>
+        <li>SPA frameworks are a separate industrial complex</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Layer · Presentation</span>
+      <h2>The choice: <em>JTE</em> / j2html</h2>
+      <ul>
+        <li>JTE — compile-time, type-safe templates (the templating analog of jOOQ)</li>
+        <li>j2html — HTML as type-safe Java (by Javalin's author)</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Layer · Presentation · JTE</span>
+      <h2>Templates that compile</h2>
+      <pre><code class="language-html" data-trim data-noescape><script type="text/template">
+@import org.sporcic.pulse.domain.MonitorView
+@param java.util.List<MonitorView> monitors
+@param java.time.Instant now
+</script></code></pre>
+      <div class="codecap">Templates declare typed parameters and compile to Java — a wrong field or type fails the build, not the page load. Hot-reloads in dev.</div>
+    </section>
+
+    <section class="content">
+      <h3>Rendering from Javalin</h3>
+      <pre><code class="language-java" data-trim data-noescape><script type="text/template">
+public void board(Context ctx) {
+    List<MonitorView> monitors = repo.dashboard();
+    ctx.render("board.jte", Map.of(
+        "monitors", monitors,
+        "now", Instant.now()));
+}
+</script></code></pre>
+      <div class="codecap">The controller hands the template a typed model; JTE binds it to the declared @param names.</div>
+    </section>
+
+    <section class="content">
+      <h3>The board template</h3>
+      <pre><code class="language-html" data-trim data-noescape><script type="text/template">
+@param java.util.List<MonitorView> monitors
+
+<table class="board">
+  @for(var m : monitors)
+    <tr class="${m.up() ? "up" : "down"}">
+      <td>${m.name()}</td>
+      <td>@if(m.up())UP @else DOWN @endif</td>
+      <td>${m.latencyMs()} ms</td>
+      <td>${m.uptimePct()}%</td>
+    </tr>
+  @endfor
+</table>
+</script></code></pre>
+      <div class="codecap">@for, @if, and field access — all checked against the MonitorView record at build time.</div>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Layer · Presentation</span>
+      <h2><em>HTMX</em> — hypermedia, not a SPA</h2>
+      <ul>
+        <li>Server returns HTML fragments</li>
+        <li>No heavy client framework, no build pipeline</li>
+        <li>The old web, disciplined</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <h3>One line of HTMX makes it live</h3>
+      <pre><code class="language-html" data-trim data-noescape><script type="text/template">
+@param java.util.List<MonitorView> monitors
+
+<div hx-get="/board" hx-trigger="every 5s">
+  @template.board(monitors = monitors)
+</div>
+</script></code></pre>
+      <div class="codecap">JTE composes the reusable board template; HTMX re-fetches it every 5s. That's the whole "live" story.</div>
+    </section>
+
+    <!-- 3d JSON -->
+    <section class="content">
+      <span class="tag">[FLEX]</span>
+      <span class="kicker">Layer · JSON</span>
+      <h2>JSON without the weight</h2>
+      <ul>
+        <li>Records as DTOs</li>
+        <li>Jackson by default; reflection-free Moshi / DSL-JSON for native-image</li>
+        <li>Or skip a binding lib — jOOQ emits JSON on read paths</li>
+      </ul>
+      <aside class="notes">[FLEX] — compress to one slide or fold into the data section if running long.</aside>
+    </section>
+
+    <section class="content">
+      <h3>Record DTO → JSON</h3>
+      <pre><code class="language-java" data-trim data-noescape><script type="text/template">
+record MonitorView(String name, String url,
+                   boolean up, long latencyMs) {}
+
+// Javalin serializes the record straight to JSON
+ctx.json(new MonitorView(m.name(), m.url(), m.up(), m.latencyMs()));
+</script></code></pre>
+      <div class="codecap">Records as DTOs — immutable, explicit, zero ceremony.</div>
+    </section>
+
+    <!-- 3e Scheduled checks -->
+    <section class="content">
+      <span class="kicker">Layer · Scheduled checks</span>
+      <h2>The JDK is the scheduler</h2>
+      <ul>
+        <li>A <em>ScheduledExecutorService</em> drives the checks on a fixed interval</li>
+        <li>A virtual thread per check; the JDK <em>HttpClient</em> pings with a timeout</li>
+        <li>No job library, no broker — the loop lives in your one process</li>
+      </ul>
+      <aside class="notes">The lean replacement for a background-job library: the JDK already schedules and makes HTTP calls. Reinforces "reach for the stdlib first." Single process, so no distributed-job machinery needed.</aside>
+    </section>
+
+    <section class="content">
+      <h3>The check loop</h3>
+      <pre><code class="language-java" data-trim data-noescape><script type="text/template">
+var scheduler = Executors.newSingleThreadScheduledExecutor();
+
+scheduler.scheduleAtFixedRate(() -> {
+    for (var m : monitors.enabled())
+        Thread.startVirtualThread(() -> checker.check(m));
+}, 0, 60, TimeUnit.SECONDS);
+</script></code></pre>
+      <div class="codecap">One JDK scheduler, a virtual thread per check — each ping is an HttpClient call with a timeout. No library required.</div>
+    </section>
+
+    <!-- ===================== 4. DEPLOYMENT ===================== -->
+    <section class="divider">
+      <span class="kicker">Part 4</span>
+      <h1>Deployment</h1>
+      <div class="rule"></div>
+      <div class="timing">~10 min · DigitalOcean</div>
+    </section>
+
+    <section class="content">
+      <span class="kicker">First principle</span>
+      <h2>SQLite shapes everything</h2>
+      <ul>
+        <li>A stateful "pet" on persistent disk — not disposable "cattle"</li>
+        <li>One droplet with a persistent volume is the <em>right</em> shape</li>
+        <li>Kubernetes &amp; serverless are the wrong tool here</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Choose your artifact</span>
+      <h2>Three options, increasing leverage</h2>
+      <ul>
+        <li>Fat jar + systemd service — the lean default</li>
+        <li>Docker image — reproducible deploys &amp; rollback</li>
+        <li>GraalVM native binary — smallest footprint, build-tax</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <span class="tag">[the one rule]</span>
+      <span class="kicker">Docker caveat</span>
+      <h2>SQLite lives on a host volume</h2>
+      <ul>
+        <li>Never inside the container's ephemeral filesystem</li>
+        <li>Get this wrong and you lose your database on redeploy</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Edge</span>
+      <h2><em>Caddy</em> — automatic HTTPS</h2>
+      <ul>
+        <li>Let's Encrypt out of the box, trivial config</li>
+        <li>A single Go binary in front of Javalin</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Durability</span>
+      <h2><em>Litestream</em> — lose the box, keep the data</h2>
+      <ul>
+        <li>Continuous SQLite replication to object storage</li>
+        <li>Point-in-time recovery; restore to a fresh droplet in minutes</li>
+        <li>The thing that makes single-node <em>safe</em></li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Scaling</span>
+      <h2>Scale up, not out</h2>
+      <ul>
+        <li>Vertical: a bigger droplet</li>
+        <li>One modest box goes remarkably far — in-process DB, virtual threads</li>
+        <li>Graduate the data layer only when you truly must</li>
+      </ul>
+    </section>
+
+    <!-- ===================== 5. IaC ===================== -->
+    <section class="divider">
+      <span class="kicker">Part 5</span>
+      <h1>Infrastructure as Code</h1>
+      <div class="rule"></div>
+      <div class="timing">~6 min · script the whole thing</div>
+    </section>
+
+    <section class="content">
+      <span class="tag">[DEPTH]</span>
+      <span class="kicker">Provision</span>
+      <h2><em>OpenTofu</em></h2>
+      <ul>
+        <li>Droplet, firewall, DNS, object storage, volume — declaratively</li>
+        <li>The community fork that escaped Terraform's relicensing</li>
+      </ul>
+      <aside class="notes">[DEPTH] — the Terraform → OpenTofu fork is a live example of capture-and-escape. 30-second aside if philosophical tone; skip if pragmatic.</aside>
+    </section>
+
+    <section class="content">
+      <h3>OpenTofu — a droplet</h3>
+      <pre><code class="language-hcl" data-trim data-noescape><script type="text/template">
+resource "digitalocean_droplet" "pulse" {
+  name      = "pulse"
+  region    = "nyc3"
+  size      = "s-1vcpu-1gb"
+  image     = "ubuntu-24-04-x64"
+  user_data = file("cloud-init.yaml")
+}
+
+resource "digitalocean_spaces_bucket" "backups" {
+  name   = "pulse-litestream"
+  region = "nyc3"
+}
+</script></code></pre>
+      <div class="codecap">The droplet and the backup bucket, declared. <code>tofu apply</code> rebuilds it.</div>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Configure</span>
+      <h2>cloud-init → Ansible</h2>
+      <ul>
+        <li>cloud-init bootstraps the box on first boot</li>
+        <li>Graduate to Ansible (agentless) when the script outgrows itself</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Going further</span>
+      <h2>If you want more</h2>
+      <ul>
+        <li>NixOS — the whole machine as one reproducible config</li>
+        <li>Pulumi — infrastructure in Java, your home language</li>
+      </ul>
+    </section>
+
+    <section class="lead">
+      <span class="kicker">The payoff</span>
+      <h1>The whole system rebuilds from a <em>git repo</em> + a <em>backup bucket</em>.</h1>
+      <aside class="notes">tofu apply rebuilds infra · config-as-code rebuilds the box · Litestream restores the data. Land the sovereignty thesis here.</aside>
+    </section>
+
+    <!-- ===================== 6. OBSERVABILITY ===================== -->
+    <section class="divider">
+      <span class="kicker">Part 6</span>
+      <h1>Observability</h1>
+      <div class="rule"></div>
+      <div class="timing">~9 min · monitoring</div>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Principle</span>
+      <h2>Open standards, self-hosted</h2>
+      <ul>
+        <li>No SaaS APM — telemetry stays on your box</li>
+        <li>Explicit instrumentation over magic agents</li>
+        <li>Same sovereignty logic as the rest of the stack</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Metrics</span>
+      <h2><em>Micrometer</em> → Prometheus → Grafana</h2>
+      <ul>
+        <li>Vendor-neutral metrics facade (works without Spring)</li>
+        <li>Javalin plugin exposes HTTP and JVM metrics</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Logs</span>
+      <h2>Structured JSON logs</h2>
+      <ul>
+        <li>SLF4J + Logback → stdout / journald</li>
+        <li>Optional: Grafana Loki for real log search</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Traces</span>
+      <h2><em>OpenTelemetry</em> → Tempo / Jaeger</h2>
+      <ul>
+        <li>The vendor-neutral standard</li>
+        <li>Hand-placed spans over auto-instrumentation</li>
+      </ul>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Don't over-build</span>
+      <h2>Scale to need</h2>
+      <ul>
+        <li>Start: structured logs to stdout</li>
+        <li>Add: Micrometer + Prometheus + Grafana</li>
+        <li>Then: OTel traces — only when you need to chase latency</li>
+      </ul>
+      <aside class="notes">Note: the whole observability backend is self-hosted Go single-binaries beside the app — same pattern as Caddy/Litestream.</aside>
+    </section>
+
+    <section class="content">
+      <h3>Instrumentation taste</h3>
+      <pre><code class="language-java" data-trim data-noescape><script type="text/template">
+Timer.builder("pulse.check.duration")
+    .tag("monitor", m.name())
+    .register(registry)
+    .record(() -> checker.ping(m));
+
+registry.gauge("pulse.monitor.up", m, mon -> mon.up() ? 1 : 0);
+</script></code></pre>
+      <div class="codecap">Explicit instrumentation → Prometheus. You meter what you understand.</div>
+    </section>
+
+    <!-- ===================== 7. WHOLE PICTURE ===================== -->
+    <section class="divider">
+      <span class="kicker">Part 7</span>
+      <h1>The Complete Picture</h1>
+      <div class="rule"></div>
+      <div class="timing">~3 min</div>
+    </section>
+
+    <section class="content">
+      <span class="kicker">One diagram · the whole stack</span>
+      <div class="stackfig">
+<svg viewBox="0 0 1060 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pulse architecture: browser through Caddy into the Pulse app on one droplet; a JDK scheduler drives the checker that pings monitored sites; jOOQ writes to a SQLite file replicated by Litestream to object storage; metrics flow to Prometheus.">
+  <defs>
+    <marker id="ah" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L7.5,3 L0,6 Z" fill="#5b6470"/></marker>
+    <marker id="ahg" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L7.5,3 L0,6 Z" fill="#0e7a52"/></marker>
+  </defs>
+  <style>
+    .d-box  { fill:#ffffff; stroke:#cdd5dc; stroke-width:1.5; }
+    .d-comp { fill:#f6f8fa; stroke:#cdd5dc; stroke-width:1.5; }
+    .d-data { fill:#ecf6f1; stroke:#0e7a52; stroke-width:2; }
+    .d-ext  { fill:#ffffff; stroke:#9aa4ae; stroke-width:1.5; }
+    .d-lbl  { fill:#16181d; font-size:14px; font-weight:600; }
+    .d-lblm { fill:#5b6470; font-size:14px; font-weight:600; }
+    .d-edge { stroke:#5b6470; stroke-width:1.6; fill:none; }
+    .d-edgd { stroke:#0e7a52; stroke-width:1.6; fill:none; stroke-dasharray:5 4; }
+    .d-elbl { fill:#0e7a52; font-family:'JetBrains Mono',monospace; font-size:12px; }
+    .d-groupa { fill:none; stroke:#0e7a52; stroke-width:1.8; stroke-dasharray:7 5; }
+    .d-group  { fill:none; stroke:#cdd5dc; stroke-width:1.5; }
+    .d-glbl   { fill:#0e7a52; font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.06em; }
+    .d-glbl2  { fill:#5b6470; font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.06em; }
+  </style>
+  <g font-family="Archivo, sans-serif" text-anchor="middle" dominant-baseline="middle">
+    <rect class="d-groupa" x="70" y="78" width="700" height="500" rx="14"/>
+    <text class="d-glbl" x="88" y="98" text-anchor="start">ONE DROPLET · ONE FAT JAR + A FILE</text>
+    <rect class="d-group" x="110" y="180" width="620" height="300" rx="12"/>
+    <text class="d-glbl2" x="126" y="200" text-anchor="start">PULSE · JAVALIN ON VIRTUAL THREADS</text>
+
+    <rect class="d-ext" x="400" y="14" width="240" height="42" rx="10"/>
+    <text class="d-lblm" x="520" y="35">Browser · HTMX</text>
+
+    <rect class="d-box" x="385" y="110" width="270" height="44" rx="8"/>
+    <text class="d-lbl" x="520" y="132">Caddy · auto-HTTPS</text>
+
+    <rect class="d-comp" x="135" y="234" width="255" height="44" rx="8"/>
+    <text class="d-lbl" x="262" y="256">Routes</text>
+    <rect class="d-comp" x="135" y="300" width="255" height="44" rx="8"/>
+    <text class="d-lbl" x="262" y="322">JTE + HTMX</text>
+    <rect class="d-comp" x="135" y="366" width="255" height="44" rx="8"/>
+    <text class="d-lbl" x="262" y="388">jOOQ · typed SQL</text>
+
+    <rect class="d-comp" x="410" y="234" width="255" height="44" rx="8"/>
+    <text class="d-lbl" x="537" y="256">JSON API · records</text>
+    <rect class="d-comp" x="410" y="300" width="255" height="44" rx="8"/>
+    <text class="d-lbl" x="537" y="322">Scheduler · JDK timer</text>
+    <rect class="d-comp" x="410" y="366" width="255" height="44" rx="8"/>
+    <text class="d-lbl" x="537" y="388">Checker · timeout</text>
+
+    <rect class="d-data" x="385" y="505" width="270" height="44" rx="8"/>
+    <text class="d-lbl" x="520" y="527">SQLite file</text>
+
+    <rect class="d-ext" x="815" y="212" width="225" height="44" rx="8"/>
+    <text class="d-lblm" x="927" y="234">Prometheus · Grafana</text>
+    <rect class="d-ext" x="815" y="366" width="225" height="44" rx="8"/>
+    <text class="d-lblm" x="927" y="388">Monitored sites</text>
+    <rect class="d-ext" x="815" y="505" width="225" height="44" rx="8"/>
+    <text class="d-lblm" x="927" y="527">Object storage</text>
+
+    <path class="d-edge" d="M520,56 L520,108" marker-end="url(#ah)"/>
+    <path class="d-edge" d="M520,154 L520,178" marker-end="url(#ah)"/>
+    <path class="d-edge" d="M537,344 L537,364" marker-end="url(#ah)"/>
+    <path class="d-edge" d="M262,410 L262,476 L430,476 L430,503" marker-end="url(#ah)"/>
+    <path class="d-edge" d="M665,388 L813,388" marker-end="url(#ah)"/>
+    <path class="d-edgd" d="M730,234 L813,234" marker-end="url(#ahg)"/>
+    <text class="d-elbl" x="772" y="225">metrics</text>
+    <path class="d-edgd" d="M655,527 L813,527" marker-end="url(#ahg)"/>
+    <text class="d-elbl" x="734" y="518">Litestream</text>
+  </g>
+</svg>
+      </div>
+      <aside class="notes">The visual payoff — pre-rendered SVG, no runtime dependency. Walk it: request path (Browser → Caddy → Pulse), scheduled checks (Scheduler → Checker → sites), the data (jOOQ → SQLite), and recovery (Litestream → object storage). Everything inside the dashed box is one fat jar + a file.</aside>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Callback · Challenge 03</span>
+      <h2>Lean is also a security posture</h2>
+      <ul>
+        <li>Every dependency you don't add is one you can't be breached through</li>
+        <li>A stack small enough to hold in your head is small enough to audit</li>
+        <li>Smaller surface, fewer scrambles when the next Log4Shell lands</li>
+        <li>No SaaS agents — your telemetry never leaves the box</li>
+      </ul>
+      <aside class="notes">Callback to Challenge 03. The payoff: minimal dependencies isn't just comprehension — it's a smaller attack surface by definition. Tie the three north stars together: comprehension = auditable, sovereignty = telemetry stays home, security = less surface.</aside>
+    </section>
+
+    <section class="lead">
+      <h1>Every layer compile-time-safe.<br>No runtime magic.<br>One artifact + a file.</h1>
+    </section>
+
+    <section class="lead">
+      <h1>A production app one person can<br><em>understand, own, and run</em>.</h1>
+      <aside class="notes">Pay off the two north stars from S10. This is the emotional peak — let it land before the honesty slide.</aside>
+    </section>
+
+    <!-- ===================== 8. WHEN NOT TO ===================== -->
+    <section class="divider">
+      <span class="kicker">Part 8</span>
+      <h1>When NOT to Use This</h1>
+      <div class="rule"></div>
+      <div class="timing">~4 min · honest tradeoffs</div>
+    </section>
+
+    <section class="content">
+      <span class="kicker">Be honest</span>
+      <h2>The tradeoffs</h2>
+      <ul>
+        <li>High write-concurrency / true horizontal scale → Postgres &amp; beyond</li>
+        <li>Large teams → Spring's conventions are coordination tools that earn their keep</li>
+        <li>Ecosystem / regulatory mandates → use what's required</li>
+      </ul>
+      <aside class="notes">Credibility builder. Naming the limits makes everything before it more persuasive.</aside>
+    </section>
+
+    <section class="lead">
+      <h1>Lean is a <em>choice with tradeoffs</em>,<br>not a religion.</h1>
+    </section>
+
+    <!-- ===================== 9. CLOSE ===================== -->
+    <section class="content">
+      <span class="kicker">Resources</span>
+      <h2>Take it with you</h2>
+      <ul>
+        <li>Demo repo — <a href="https://github.com/timsporcic/pulse">github.com/timsporic/pulse</a></li>
+          <li>Docs: Javalin · jOOQ · JTE · Litestream · OpenTofu</li>
+          <li>Reading: <a href="https://www.terrygodier.com/the-boring-internet/ascii">The Boring Internet</a></li>
+      </ul>
+    </section>
+
+    <section class="title-slide">
+      <div class="bars"><span></span><span></span><span></span></div>
+      <h1>Thank you</h1>
+      <div class="sub">Questions?</div>
+      <div class="by">// Tim Sporcic &nbsp;·&nbsp; &lt;tim@sporcic.org&gt;</div>
+      <aside class="notes">~12 min Q&A budgeted. Keep the resources slide reachable (press ESC for overview) for questions.</aside>
+    </section>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/notes/notes.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/highlight/highlight.min.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    transition: 'fade',
+    transitionSpeed: 'fast',
+    width: 1100,
+    height: 720,
+    margin: 0.09,
+    controls: true,
+    progress: true,
+    center: false,
+    plugins: [ RevealNotes, RevealHighlight ]
+  });
+</script>
+</body>
+</html>
