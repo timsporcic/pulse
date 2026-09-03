@@ -21,8 +21,7 @@ one OpenTofu file, and watching it catch a site going down in real time.
 You leave with two questions to ask of every dependency you add from now
 on: can I understand it, and do I own it? In 2026 those questions pay
 twice, because a stack small enough to hold in your head is small enough
-for your AI pair to hold in context. A small stack is also a small attack
-surface.
+for your AI pair to hold in context. 
 
 ## The Project
 
