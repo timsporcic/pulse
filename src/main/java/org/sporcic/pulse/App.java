@@ -5,10 +5,12 @@ import gg.jte.TemplateEngine;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.rendering.template.JavalinJte;
+import org.sporcic.pulse.data.CheckRepository;
 import org.sporcic.pulse.data.Database;
 import org.sporcic.pulse.data.MonitorRepository;
 import org.sporcic.pulse.web.BoardRoutes;
 import org.sporcic.pulse.web.MonitorRoutes;
+import org.sporcic.pulse.web.api.ApiRoutes;
 
 import java.nio.file.Path;
 
@@ -28,6 +30,7 @@ public class App {
             config.fileRenderer(new JavalinJte(TemplateEngine.createPrecompiled(ContentType.Html)));
             new BoardRoutes(repository).register(config);
             new MonitorRoutes(repository).register(config);
+            new ApiRoutes(repository, new CheckRepository(dsl)).register(config);
         });
     }
 

@@ -3,30 +3,33 @@
 A lean uptime monitor — the running example for the _"Lean Java"_ conference talk.
 One process, one SQLite file, server-rendered HTML. Smallness is the feature.
 
-## Current stage: `03-presentation`
+## Current stage: `04-json`
 
-This branch makes the board live on top of `02-data`:
+This branch adds the read-only JSON API on top of `03-presentation`:
 
-- JTE 3.2.4 templates in `src/main/jte/` (`board.jte` page,
-  `fragments/rows.jte` board rows), precompiled to Java classes at build time
-  by the `gg.jte.gradle` plugin — no runtime template compilation, works
-  inside the shadow jar
-- The board section polls `GET /board` every 5 seconds via htmx
-  (`hx-get` + `hx-trigger="every 5s"`) and swaps in the fresh rows
-- Add-monitor form and per-row Remove buttons post through htmx
-  (`hx-swap="none"` — the next poll shows the change)
-- `MonitorRepository.listViews()` — one query joining each monitor with its
-  latest check and uptime %; monitors with no checks yet render as
-  "waiting for first check" (real check data arrives in `05-jobs`)
-- The static `index.html` is replaced by the server-rendered board at `/`
+- `GET /api/monitors` — all monitors as JSON
+- `GET /api/monitors/{id}/checks` — the monitor's checks, newest first
+  (capped at 100), 404 for an unknown monitor
+- The domain records (`Monitor`, `Check`) serialize directly as DTOs —
+  Jackson handles records natively, no annotations
+- `data/CheckRepository` — typed jOOQ reads over `check_result`
+- The interim plain-text `GET /monitors` is retired; the form endpoints
+  (`POST /monitors`, `DELETE /monitors/{id}`) stay, serving the board UI
 
-Try it: `./gradlew run`, open http://localhost:7070/, add a monitor — it
-appears within one 5-second poll cycle.
+Try it:
+
+```
+./gradlew run
+curl -d 'name=Example&url=https://example.org' localhost:7070/monitors
+curl localhost:7070/api/monitors
+curl localhost:7070/api/monitors/1/checks
+```
 
 Earlier stages: `00-skeleton` (Gradle 9.7, JDK 26 toolchain, Javalin 7.2.3 on
 virtual threads, Shadow fat jar), `01-web` (dashboard shell, vendored
 htmx 4.0.0 + prebuilt Tailwind CSS), `02-data` (SQLite + WAL, jOOQ codegen
-from `schema.sql`, persisted monitor add/list/delete).
+from `schema.sql`, persisted monitor add/list/delete), `03-presentation`
+(JTE board + 5s htmx polling).
 
 ## Run it
 

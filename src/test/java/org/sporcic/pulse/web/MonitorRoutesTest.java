@@ -34,7 +34,7 @@ class MonitorRoutesTest {
             var created = postForm(client, "/monitors", "name=Example&url=https%3A%2F%2Fexample.org");
             assertEquals(201, created.code());
 
-            var list = client.get("/monitors");
+            var list = client.get("/api/monitors");
             assertEquals(200, list.code());
             var body = list.body().string();
             assertTrue(body.contains("Example"));
@@ -59,7 +59,7 @@ class MonitorRoutesTest {
             var deleted = client.delete("/monitors/" + id);
             assertEquals(204, deleted.code());
 
-            assertFalse(client.get("/monitors").body().string().contains("Doomed"));
+            assertFalse(client.get("/api/monitors").body().string().contains("Doomed"));
         });
     }
 
@@ -77,6 +77,6 @@ class MonitorRoutesTest {
                 postForm(client, "/monitors", "name=Durable&url=https%3A%2F%2Fdurable.example"));
 
         JavalinTest.test(App.create(dbFile), (server, client) ->
-                assertTrue(client.get("/monitors").body().string().contains("Durable")));
+                assertTrue(client.get("/api/monitors").body().string().contains("Durable")));
     }
 }

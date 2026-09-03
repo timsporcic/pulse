@@ -69,6 +69,10 @@ public class MonitorRepository {
                 ));
     }
 
+    public boolean exists(int id) {
+        return dsl.fetchExists(dsl.selectFrom(MONITOR).where(MONITOR.ID.eq(id)));
+    }
+
     public boolean delete(int id) {
         return dsl.deleteFrom(MONITOR)
                 .where(MONITOR.ID.eq(id))

@@ -5,12 +5,7 @@ import io.javalin.http.Context;
 import org.sporcic.pulse.data.MonitorRepository;
 import org.sporcic.pulse.domain.Monitor;
 
-import java.util.stream.Collectors;
-
-/**
- * Plain-text/form endpoints for managing monitors. A proper JSON API with
- * record DTOs arrives in the 04-json stage.
- */
+/** Form endpoints used by the board UI; reads live in the JSON API. */
 public class MonitorRoutes {
 
     private final MonitorRepository repository;
@@ -20,15 +15,8 @@ public class MonitorRoutes {
     }
 
     public void register(JavalinConfig config) {
-        config.routes.get("/monitors", this::list);
         config.routes.post("/monitors", this::add);
         config.routes.delete("/monitors/{id}", this::delete);
-    }
-
-    private void list(Context ctx) {
-        ctx.result(repository.list().stream()
-                .map(m -> m.id() + " " + m.name() + " " + m.url())
-                .collect(Collectors.joining("\n")));
     }
 
     private void add(Context ctx) {
