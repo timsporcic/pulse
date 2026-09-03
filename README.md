@@ -9,16 +9,17 @@ magic to hide the pain. That Java is gone. Virtual threads, records, and a
 grown-up JDK have quietly erased the reasons Spring exists, and most teams
 haven't noticed yet.
 
-This talk builds a real production app on stage, layer by layer, on a stack
+This talk walks through a real production app, layer by layer, on a stack
 you can hold in your head: Javalin, jOOQ, server-rendered templates with
 htmx, background jobs and all application state in a single SQLite file.
-Then it ships the whole thing to a $6 box with automatic HTTPS, continuous
-backup, and Prometheus metrics, provisioned by one OpenTofu file. Every
-claim comes with a receipt measured on the demo repo: half the jars of the
+Then the demo: deploying that app live to a $6 box with automatic HTTPS,
+continuous backup, and Prometheus metrics, provisioned by one OpenTofu
+file, and watching it catch a site going down in real time. Every claim
+comes with a receipt measured on the demo repo: half the jars of the
 Spring Boot equivalent, half the memory, a 47-test suite that finishes
-before a Spring context finishes starting. The bugs hit along the way are in
-the talk too, including the SQLite lock upgrade that took the app down on
-its first run.
+before a Spring context finishes starting. The bugs hit along the way are
+in the talk too, including the SQLite lock upgrade that took the app down
+on its first run.
 
 You leave with the full repo: ten branches, each one a working checkpoint
 you can check out, build, and run, from empty skeleton to a provisioned box
@@ -27,6 +28,8 @@ two questions to ask of every dependency you add from now on: can I
 understand it, and do I own it? In 2026 those questions pay twice, because a
 stack small enough to hold in your head is small enough for your AI pair to
 hold in context.
+
+## The Project
 
 A lean uptime monitor — the running example for the _"Lean Java"_ conference
 talk. Register URLs; a scheduled job pings each one; results go to SQLite; a
