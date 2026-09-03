@@ -349,6 +349,7 @@
             <li>12 dependencies declared</li>
             <li>67 jars on the runtime classpath</li>
             <li>34 MB of other people's code</li>
+            <li>19 upstream projects to trust</li>
           </ul>
         </div>
         <div>
@@ -357,13 +358,14 @@
             <li>9 starters declared</li>
             <li>102 jars on the runtime classpath</li>
             <li>67 MB of other people's code</li>
+            <li>28 upstream projects to trust</li>
           </ul>
         </div>
       </div>
       <div class="codecap">Same feature set: HTTP, SQL, templates, metrics, persistent jobs, SQLite, JSON logs. Spring Boot 4.1.1 with web, data-jpa, thymeleaf, actuator, quartz, prometheus. The starters look leaner in the build file; the classpath tells the truth.</div>
       <aside class="notes">Measured, same method both sides: count the resolved runtime classpath of this repo vs a Spring Boot 4.1.1 project with the equivalent starters. Two beats. First: 9 starter lines LOOK leaner than 12 explicit picks, and that's exactly the trap. The build file hides the tree. Second: 35 more jars and double the bytes, every one patchable, every one on the Log4Shell slide's attack surface.
 
-Where Pulse's 67 come from, for the inevitable "67 isn't lean either" question: Jetty is 29 of them (22 jetty-* modules plus 7 jakarta spec APIs its EE10 layer pulls) — that's Javalin's embedded server, one project shipped as fine-grained modules. Micrometer + the Prometheus client are 12 more. The rest is small: Jackson 5, logging 4, JobRunr 4 (asm, gson, cron-utils), JTE 3, jOOQ 3 (two of those are its unused reactive API), Javalin 3 + kotlin-stdlib, SQLite driver 1. So the count is dominated by two well-factored infrastructure suites, not sprawl: 67 jars but only about a dozen PROJECTS to trust. Spring's 102 span Spring Framework, Boot, Data, Hibernate, Tomcat, and Quartz. The difference is you can name what each of Pulse's 12 direct picks is for; nobody can do that for 102.</aside>
+Where Pulse's 67 come from, for the inevitable "67 isn't lean either" question: Jetty is 29 of them (22 jetty-* modules plus 7 jakarta spec APIs its EE10 layer pulls) — that's Javalin's embedded server, one project shipped as fine-grained modules. Micrometer + the Prometheus client are 12 more. The rest is small: Jackson 5, logging 4, JobRunr 4 (asm, gson, cron-utils), JTE 3, jOOQ 3 (two of those are its unused reactive API), Javalin 3 + kotlin-stdlib, SQLite driver 1. So the count is dominated by two well-factored infrastructure suites, not sprawl: 67 jars from 19 distinct upstream projects (multi-module projects like Jetty and the Jakarta specs counted once each). Spring's 102 jars come from 28 projects: Spring Framework/Boot/Data, Hibernate, Tomcat, Quartz, ByteBuddy, AntLR, AspectJ, Thymeleaf, JAXB, and more. The difference is you can name what each of Pulse's 12 direct picks is for; nobody can do that for 102.</aside>
     </section>
 
     <section class="content">
