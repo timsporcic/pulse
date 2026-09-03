@@ -1,0 +1,19 @@
+# Gradle
+build/
+.gradle/
+
+# jOOQ generated sources
+build/generated-src/
+
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
