@@ -47,7 +47,7 @@ application {
     mainClass = 'org.sporcic.pulse.App'
 }
 
-def jooqGeneratedDir = layout.buildDirectory.dir("generated/sources/jooq/java/main")
+def jooqGeneratedDir = 'build/generated/sources/jooq/java/main'
 
 jooq {
     configuration {
@@ -59,25 +59,17 @@ jooq {
                         key = 'scripts'
                         value = 'src/main/resources/db/schema.sql'
                     }
-                    property {
-                        key = 'sort'
-                        value = 'semantic'
-                    }
+                    // non-default: lets schema.sql hide the runtime-only
+                    // CREATE INDEX from codegen (see the comment there)
                     property {
                         key = 'parseIgnoreComments'
                         value = 'true'
                     }
                 }
             }
-            generate {
-                daos = false
-                pojos = false
-                records = true
-                fluentSetters = true
-            }
             target {
                 packageName = 'org.sporcic.pulse.jooq'
-                directory = jooqGeneratedDir.get().asFile.absolutePath
+                directory = jooqGeneratedDir
             }
         }
     }
