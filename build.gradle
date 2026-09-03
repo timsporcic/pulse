@@ -96,8 +96,7 @@ test {
 }
 
 tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
-    options.compilerArgs.addAll(['-Xlint:all'])
+    options.compilerArgs.add('-Xlint:all')
 }
 
 javadoc {
