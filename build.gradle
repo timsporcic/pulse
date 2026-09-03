@@ -1,10 +1,14 @@
 plugins {
     id 'application'
     id 'com.gradleup.shadow' version '9.6.1'
-    id 'org.jooq.jooq-codegen-gradle' version '3.21.7'
-    id 'gg.jte.gradle' version '3.2.4'
+    id 'org.jooq.jooq-codegen-gradle' version '3.21.7'   // keep in sync with jooqVersion below
+    id 'gg.jte.gradle' version '3.2.4'                   // keep in sync with gg.jte:jte below
     id 'com.github.ben-manes.versions' version '0.61.0'
 }
+
+// the plugins block above cannot reference variables, so the codegen plugin
+// carries the same version as a literal
+def jooqVersion = '3.21.7'
 
 group = 'org.sporcic'
 
@@ -25,9 +29,9 @@ dependencies {
     implementation 'io.javalin:javalin-micrometer'
     implementation 'gg.jte:jte:3.2.4'
 
-    implementation 'org.jooq:jooq:3.21.7'
+    implementation "org.jooq:jooq:$jooqVersion"
     implementation 'org.xerial:sqlite-jdbc:3.53.4.0'
-    jooqCodegen 'org.jooq:jooq-meta-extensions:3.21.7'
+    jooqCodegen "org.jooq:jooq-meta-extensions:$jooqVersion"
 
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.2'
     implementation 'org.jobrunr:jobrunr:7.5.1'
