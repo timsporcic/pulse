@@ -13,6 +13,13 @@ build/generated-src/
 # Tailwind standalone CLI binary (downloaded by tools/build-css.sh)
 tools/tailwind/tailwindcss-cli
 
+# OpenTofu
+infra/.terraform/
+infra/.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+*.tfvars
+
 # IDE
 .idea/
 *.iml

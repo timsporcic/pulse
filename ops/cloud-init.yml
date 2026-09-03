@@ -9,6 +9,10 @@ users:
     system: true
     shell: /usr/sbin/nologin
 
+# the SQLite file lives on the attached volume, which outlives the droplet
+mounts:
+  - ["${volume_device}", /var/lib/pulse, ext4, "defaults,nofail,discard", "0", "2"]
+
 package_update: true
 packages:
   - curl
@@ -73,6 +77,9 @@ runcmd:
 
   # Litestream (single Go binary)
   - curl -sL "https://github.com/benbjohnson/litestream/releases/latest/download/litestream-linux-amd64.tar.gz" | tar -xz -C /usr/local/bin
+
+  # make sure the data volume is mounted even if it attached late
+  - mountpoint -q /var/lib/pulse || mount -a
 
   # Pulse itself: jar + configs from the deploy bucket (URL templated in 09-iac)
   - mkdir -p /opt/pulse /var/lib/pulse

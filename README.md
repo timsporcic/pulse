@@ -3,7 +3,32 @@
 A lean uptime monitor — the running example for the _"Lean Java"_ conference talk.
 One process, one SQLite file, server-rendered HTML. Smallness is the feature.
 
-## Current stage: `08-packaging`
+## Current stage: `09-iac`
+
+This branch provisions the whole thing with OpenTofu, on top of
+`08-packaging`:
+
+- `infra/` — one Spaces bucket (deploy artifacts under `/deploy`,
+  Litestream replica at `/pulse.db`), a volume for the SQLite file that
+  outlives the droplet, the droplet itself, and a firewall (22/80/443 in)
+- `tofu apply` uploads the built jar + templated Caddyfile/litestream.yml
+  to the bucket, then boots the droplet with `ops/cloud-init.yml` as
+  templated user-data — the box installs JDK 26, Caddy, and Litestream,
+  restores the database from a replica if one exists, and starts everything
+- Kill the droplet, `tofu apply` again: infra rebuilds, cloud-init
+  re-bootstraps, Litestream restores the data. That's the sovereignty story
+
+Deploy:
+
+```
+./gradlew shadowJar
+cd infra
+tofu init
+tofu apply    # needs do_token, spaces keys, domain (see variables.tf)
+# point the domain's A record at the droplet_ip output
+```
+
+## Previous stage: `08-packaging`
 
 This branch readies Pulse for a real box, on top of `07-observability`:
 
