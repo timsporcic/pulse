@@ -1,6 +1,7 @@
 plugins {
     id 'application'
     id 'com.gradleup.shadow' version '9.6.1'
+    id 'org.jooq.jooq-codegen-gradle' version '3.21.7'
 }
 
 group = 'org.sporcic'
@@ -19,6 +20,10 @@ dependencies {
     implementation platform('io.javalin:javalin-bom:7.2.3')
     implementation 'io.javalin:javalin'
 
+    implementation 'org.jooq:jooq:3.21.7'
+    implementation 'org.xerial:sqlite-jdbc:3.53.4.0'
+    jooqCodegen 'org.jooq:jooq-meta-extensions:3.21.7'
+
     implementation 'org.slf4j:slf4j-api:2.0.18'
     runtimeOnly 'ch.qos.logback:logback-classic:1.6.3'
 
@@ -30,6 +35,36 @@ dependencies {
 application {
     mainClass = 'org.sporcic.pulse.App'
 }
+
+jooq {
+    configuration {
+        generator {
+            database {
+                name = 'org.jooq.meta.extensions.ddl.DDLDatabase'
+                properties {
+                    property {
+                        key = 'scripts'
+                        value = 'src/main/resources/db/schema.sql'
+                    }
+                    property {
+                        key = 'sort'
+                        value = 'semantic'
+                    }
+                    property {
+                        key = 'parseIgnoreComments'
+                        value = 'true'
+                    }
+                }
+            }
+            target {
+                packageName = 'org.sporcic.pulse.jooq'
+                directory = 'build/generated-src/jooq'
+            }
+        }
+    }
+}
+
+sourceSets.main.java.srcDir 'build/generated-src/jooq'
 
 test {
     useJUnitPlatform()

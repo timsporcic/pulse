@@ -3,21 +3,36 @@
 A lean uptime monitor — the running example for the _"Lean Java"_ conference talk.
 One process, one SQLite file, server-rendered HTML. Smallness is the feature.
 
-## Current stage: `01-web`
+## Current stage: `02-data`
 
-This branch adds the static dashboard shell on top of `00-skeleton`:
+This branch adds persistence on top of `01-web`:
 
-- Javalin serves static files from the classpath (`src/main/resources/public/`)
-- `index.html` — the dashboard shell: monitor rows with status edge, latency, and uptime (static placeholder content for now)
-- `htmx.min.js` 4.0.0 vendored — no CDN at runtime
-- `tailwind.css` prebuilt and committed; regenerate with `tools/build-css.sh` when
-  Tailwind classes change (the script downloads the standalone CLI on first use —
-  a dev-time tool only, nothing runs at build or runtime)
-- Tests assert the shell and both vendored assets are served
+- `src/main/resources/db/schema.sql` — canonical DDL for the two tables
+  (`monitor`, `check_result`); used by jOOQ codegen at build time and applied
+  at startup (idempotent `CREATE ... IF NOT EXISTS`)
+- SQLite via `sqlite-jdbc`, opened in WAL mode with a busy timeout and
+  foreign keys enforced (`data/Database.java`)
+- jOOQ 3.21.7 with build-time codegen from the DDL (`./gradlew jooqCodegen`,
+  runs automatically before compilation) — typed SQL, no ORM
+- `data/MonitorRepository` — add / list / delete monitors
+- Interim endpoints to exercise persistence from the running app
+  (`POST /monitors`, `GET /monitors`, `DELETE /monitors/{id}`, plain text —
+  the JSON API with record DTOs arrives in `04-json`)
+- The database file defaults to `./pulse.db`; override with the `PULSE_DB`
+  environment variable
 
-Earlier stage `00-skeleton` established: Gradle 9.7 (Groovy DSL, JDK 26 toolchain),
-`application` + Shadow plugins, Javalin 7.2.3 on virtual threads, Logback logging,
-and the first boot-the-app test.
+Try it:
+
+```
+./gradlew run
+curl -d 'name=Example&url=https://example.org' localhost:7070/monitors
+curl localhost:7070/monitors        # survives a restart
+curl -X DELETE localhost:7070/monitors/1
+```
+
+Earlier stages: `00-skeleton` (Gradle 9.7, JDK 26 toolchain, Javalin 7.2.3 on
+virtual threads, Shadow fat jar), `01-web` (static dashboard shell, vendored
+htmx 4.0.0 + prebuilt Tailwind CSS).
 
 ## Run it
 
