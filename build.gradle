@@ -81,10 +81,13 @@ sourceSets.main.java.srcDir jooqGeneratedDir
 // (or clean build) fails before the generated classes exist
 tasks.named('compileJava') { dependsOn 'jooqCodegen' }
 
+def jteGeneratedDir = 'build/generated/sources/jte/java/main'
+
 jte {
     // Templates are compiled to Java classes at build time and shipped in the
     // jar - no runtime compilation, works inside the shadow jar.
     generate()
+    targetDirectory = file(jteGeneratedDir).toPath()
 }
 
 test {
