@@ -4,7 +4,11 @@ ${domain} {
 	@metrics path /metrics
 	respond @metrics 403
 
-	reverse_proxy localhost:7070
+	basic_auth {
+		import /etc/caddy/pulse-users
+	}
+
+	reverse_proxy 127.0.0.1:7070
 
 	encode gzip
 

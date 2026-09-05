@@ -1,5 +1,6 @@
 package org.sporcic.pulse.check;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -39,19 +40,19 @@ public class Pinger {
      * a virtual thread.
      */
     public PingResult ping(String url) {
-        var request = HttpRequest.newBuilder(URI.create(url))
-                .timeout(REQUEST_TIMEOUT)
-                .GET()
-                .build();
         var started = System.nanoTime();
         try {
+            var request = HttpRequest.newBuilder(URI.create(url))
+                    .timeout(REQUEST_TIMEOUT)
+                    .GET()
+                    .build();
             HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
             var latencyMs = (int) ((System.nanoTime() - started) / 1_000_000);
             return new PingResult(response.statusCode() < 400, response.statusCode(), latencyMs);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return new PingResult(false, null, null);
-        } catch (Exception e) {
+        } catch (IOException | IllegalArgumentException e) {
             return new PingResult(false, null, null);
         }
     }

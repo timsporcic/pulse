@@ -55,4 +55,12 @@ class PingerTest {
         assertFalse(result.up());
         assertNull(result.statusCode());
     }
+
+    @Test
+    void unsupportedUrlIsDownWithoutThrowing() {
+        var result = pinger.ping("ftp://example.org");
+        assertFalse(result.up());
+        assertNull(result.statusCode());
+    }
+
 }

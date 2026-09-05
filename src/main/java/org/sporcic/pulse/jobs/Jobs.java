@@ -5,7 +5,6 @@ import org.jobrunr.jobs.lambdas.IocJobLambda;
 import org.jobrunr.scheduling.JobScheduler;
 import org.jobrunr.server.JobActivator;
 import org.jobrunr.storage.sql.sqlite.SqLiteStorageProvider;
-import io.micrometer.core.instrument.MeterRegistry;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.sporcic.pulse.check.Pinger;
@@ -41,7 +40,7 @@ public final class Jobs {
      * live instance at execution time. Both job singletons are wired by hand
      * right here.
      */
-    public static void start(Path dbFile, MeterRegistry registry) {
+    public static void start(Path dbFile, CheckMetrics metrics) {
         var dataSource = Database.dataSource(dbFile);
         var dsl = DSL.using(dataSource, SQLDialect.SQLITE);
         var monitors = new MonitorRepository(dsl);
@@ -52,9 +51,9 @@ public final class Jobs {
         // the scheduler only exists after initialize(); the listener runs later
         var scheduler = new AtomicReference<JobScheduler>();
         var checkJob = new CheckDueMonitorsJob(monitors, checks, new Pinger(),
-                monitorId -> scheduler.get()
-                        .enqueue((IocJobLambda<NotifyDownJob>) x -> x.notifyDown(monitorId)),
-                new CheckMetrics(registry));
+                (monitorId, checkId) -> scheduler.get()
+                        .enqueue((IocJobLambda<NotifyDownJob>) x -> x.notifyDown(monitorId, checkId)),
+                metrics);
 
         var jobScheduler = JobRunr.configure()
                 .useStorageProvider(new SqLiteStorageProvider(dataSource))

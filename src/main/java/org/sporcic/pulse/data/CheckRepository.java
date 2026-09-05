@@ -2,8 +2,10 @@ package org.sporcic.pulse.data;
 
 import org.jooq.DSLContext;
 import org.sporcic.pulse.domain.Check;
+import org.sporcic.pulse.jooq.tables.records.CheckResultRecord;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.sporcic.pulse.jooq.Tables.CHECK_RESULT;
 
@@ -21,21 +23,33 @@ public class CheckRepository {
     }
 
     /**
-     * Appends one check result.
+     * Appends one check result and returns its ID for queued notifications.
      *
      * @param checkedAt ISO-8601 UTC timestamp; stored as text and compared
      *                  lexically, so the format must stay sortable
      * @param statusCode null when no HTTP response was received
      * @param latencyMs  null when no HTTP response was received
      */
-    public void add(int monitorId, String checkedAt, boolean up, Integer statusCode, Integer latencyMs) {
-        dsl.insertInto(CHECK_RESULT)
+    public int add(int monitorId, String checkedAt, boolean up, Integer statusCode, Integer latencyMs) {
+        return dsl.insertInto(CHECK_RESULT)
                 .set(CHECK_RESULT.MONITOR_ID, monitorId)
                 .set(CHECK_RESULT.CHECKED_AT, checkedAt)
                 .set(CHECK_RESULT.UP, up ? 1 : 0)
                 .set(CHECK_RESULT.STATUS_CODE, statusCode)
                 .set(CHECK_RESULT.LATENCY_MS, latencyMs)
-                .execute();
+                .returning(CHECK_RESULT.ID)
+                .fetchSingle().getId();
+    }
+
+    public Optional<Check> findById(int id) {
+        return dsl.selectFrom(CHECK_RESULT)
+                .where(CHECK_RESULT.ID.eq(id))
+                .fetchOptional(CheckRepository::toCheck);
+    }
+
+    private static Check toCheck(CheckResultRecord r) {
+        return new Check(r.getId(), r.getMonitorId(), r.getCheckedAt(), r.getUp() != 0,
+                r.getStatusCode(), r.getLatencyMs());
     }
 
     /**
@@ -48,13 +62,6 @@ public class CheckRepository {
                 .where(CHECK_RESULT.MONITOR_ID.eq(monitorId))
                 .orderBy(CHECK_RESULT.ID.desc())
                 .limit(limit)
-                .fetch(r -> new Check(
-                        r.getId(),
-                        r.getMonitorId(),
-                        r.getCheckedAt(),
-                        r.getUp() != 0,
-                        r.getStatusCode(),
-                        r.getLatencyMs()
-                ));
+                .fetch(CheckRepository::toCheck);
     }
 }

@@ -43,7 +43,7 @@
       </button>
     </form>
 
-    <section id="board" hx-get="/board" hx-trigger="every 5s" hx-swap="innerHTML"
+    <section id="board" hx-get="/board" hx-trigger="every 5s, monitorsChanged from:body" hx-swap="innerHTML"
              class="divide-y divide-ink/10 overflow-hidden rounded-lg border border-ink/10 bg-white">
       @template.fragments.rows(monitors)
     </section>

@@ -70,22 +70,49 @@ pipeline, any message broker, Kubernetes.
 Add a monitor on the dashboard (try a bogus URL to see a red "down" row —
 checks start within ~15 seconds). JSON API at `/api/monitors` and
 `/api/monitors/{id}/checks`; Prometheus metrics at `/metrics`. The database
-defaults to `./pulse.db` (override with `PULSE_DB`).
+defaults to `./pulse.db` (override with `PULSE_DB`). The application binds to
+`127.0.0.1:7070`; Caddy is the public entry point. Monitor and webhook URLs must
+use HTTP or HTTPS, without embedded credentials, and check intervals must be positive.
 
 ## Deploy it
 
 ```
 ./gradlew shadowJar
 cd infra
-tofu init && tofu apply   # needs do_token, spaces keys, domain
+tofu init && tofu apply   # needs do_token, spaces keys, domain, demo_password_hash
 # point your domain's A record at the droplet_ip output
 ```
+
+Generate a bcrypt hash with `caddy hash-password` and set `demo_password_hash`
+in an ignored `infra/*.tfvars` file. The default login name is `demo`; override
+it with `demo_username`. Caddy requires authentication for the dashboard and API.
+The hash travels through cloud-init into `/etc/caddy/pulse-users`, never the
+public artifact bucket. This deployment is for a trusted operator who controls
+outbound monitor destinations. The JSON API omits webhook URLs.
 
 `tofu apply` uploads the jar and configs to a Spaces bucket and boots a
 droplet whose cloud-init installs JDK 26, Caddy, and Litestream, mounts the
 data volume, restores the SQLite file from a replica if one exists, and
 starts everything. Destroy the droplet and apply again: the box rebuilds
-itself and the data comes back. That is the sovereignty story.
+itself and the data comes back. `pulse-restore.service` reads the backup
+credentials from `/etc/litestream.env` and restores only when the database is
+absent. Pulse and replication require a successful restore and a mounted data
+volume. An existing database is preserved. Test backup recovery on an empty
+volume to distinguish it from reattaching the existing data.
+
+For manual installation, install all three units in `ops/`: `pulse.service`,
+`pulse-restore.service`, and `litestream.service`. Create `/etc/caddy/pulse-users`
+with one `username bcrypt-hash` line, owned by `root:caddy` with mode `0640`.
+Store the Litestream environment file as root with mode `0600`.
+
+Before upgrading an existing instance, let pending outage notifications finish.
+New notification jobs store both the monitor ID and failing check ID; jobs from
+the previous one-argument signature cannot be replayed by this version.
+
+Run `python3 tools/verify-deployment.py` with OpenTofu and Caddy installed to
+check rendered cloud-init, startup dependencies, and actual authenticated HTTP
+requests through both Caddy configurations. This check does not provision a
+server or verify access to a backup bucket.
 
 ## Follow the build, branch by branch
 

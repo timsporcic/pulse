@@ -1,0 +1,15 @@
+[Unit]
+Description=Restore Pulse database before application startup
+After=network-online.target
+Wants=network-online.target
+RequiresMountsFor=/var/lib/pulse
+
+[Service]
+Type=oneshot
+User=pulse
+Group=pulse
+EnvironmentFile=/etc/litestream.env
+ExecStartPre=/usr/bin/mountpoint -q /var/lib/pulse
+ExecStart=/usr/local/bin/litestream restore -if-db-not-exists -if-replica-exists -config /etc/litestream.yml /var/lib/pulse/pulse.db
+RemainAfterExit=yes
+TimeoutStartSec=300

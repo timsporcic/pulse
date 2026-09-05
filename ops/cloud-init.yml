@@ -21,52 +21,26 @@ packages:
 write_files:
   - path: /etc/systemd/system/pulse.service
     content: |
-      [Unit]
-      Description=Pulse uptime monitor
-      After=network-online.target
-      Wants=network-online.target
-
-      [Service]
-      Type=simple
-      User=pulse
-      Group=pulse
-      Environment=PULSE_DB=/var/lib/pulse/pulse.db
-      WorkingDirectory=/var/lib/pulse
-      ExecStart=/usr/bin/java -Dlogback.configurationFile=logback-json.xml -jar /opt/pulse/pulse-all.jar
-      Restart=always
-      RestartSec=5
-      NoNewPrivileges=true
-      ProtectSystem=strict
-      ProtectHome=true
-      ReadWritePaths=/var/lib/pulse
-      PrivateTmp=true
-
-      [Install]
-      WantedBy=multi-user.target
-
+      ${indent(6, pulse_service)}
+  - path: /etc/systemd/system/pulse-restore.service
+    content: |
+      ${indent(6, restore_service)}
   - path: /etc/systemd/system/litestream.service
     content: |
-      [Unit]
-      Description=Litestream replication
-      After=network-online.target
-      Wants=network-online.target
-
-      [Service]
-      Type=simple
-      User=pulse
-      Group=pulse
-      EnvironmentFile=/etc/litestream.env
-      ExecStart=/usr/local/bin/litestream replicate -config /etc/litestream.yml
-      Restart=always
-      RestartSec=5
-
-      [Install]
-      WantedBy=multi-user.target
+      ${indent(6, litestream_service)}
+  - path: /etc/litestream.env
+    permissions: '0600'
+    encoding: b64
+    content: ${litestream_env_b64}
+  - path: /etc/caddy/pulse-users
+    permissions: '0600'
+    encoding: b64
+    content: ${caddy_users_b64}
 
 runcmd:
   # Temurin JDK 26 (tarball via the Adoptium API; symlinked into /usr/bin)
   - mkdir -p /opt/java
-  - curl -sL "https://api.adoptium.net/v3/binary/latest/26/ga/linux/x64/jdk/hotspot/normal/eclipse" -o /tmp/jdk.tar.gz
+  - curl -fsSL "https://api.adoptium.net/v3/binary/latest/26/ga/linux/x64/jdk/hotspot/normal/eclipse" -o /tmp/jdk.tar.gz
   - tar -xzf /tmp/jdk.tar.gz -C /opt/java --strip-components=1
   - ln -sf /opt/java/bin/java /usr/bin/java
 
@@ -76,24 +50,26 @@ runcmd:
   - apt-get update && apt-get install -y caddy
 
   # Litestream (single Go binary)
-  - curl -sL "https://github.com/benbjohnson/litestream/releases/latest/download/litestream-linux-amd64.tar.gz" | tar -xz -C /usr/local/bin
+  - curl -fsSL "https://github.com/benbjohnson/litestream/releases/latest/download/litestream-linux-amd64.tar.gz" | tar -xz -C /usr/local/bin
 
   # make sure the data volume is mounted even if it attached late
   - mountpoint -q /var/lib/pulse || mount -a
+  - mountpoint -q /var/lib/pulse && chown pulse:pulse /var/lib/pulse
 
   # Pulse itself: jar + configs from the deploy bucket (URL templated in 09-iac)
   - mkdir -p /opt/pulse /var/lib/pulse
-  - curl -sL "${deploy_bucket_url}/pulse-all.jar" -o /opt/pulse/pulse-all.jar
-  - curl -sL "${deploy_bucket_url}/Caddyfile" -o /etc/caddy/Caddyfile
-  - curl -sL "${deploy_bucket_url}/litestream.yml" -o /etc/litestream.yml
-  - chown -R pulse:pulse /var/lib/pulse
+  - curl -fsSL "${deploy_bucket_url}/pulse-all.jar" -o /opt/pulse/pulse-all.jar
+  - curl -fsSL "${deploy_bucket_url}/Caddyfile" -o /etc/caddy/Caddyfile
+  - curl -fsSL "${deploy_bucket_url}/litestream.yml" -o /etc/litestream.yml
+  - mountpoint -q /var/lib/pulse && chown -R pulse:pulse /var/lib/pulse
 
-  # Litestream credentials (values templated in by 09-iac)
-  - printf 'LITESTREAM_ACCESS_KEY_ID=%s\nLITESTREAM_SECRET_ACCESS_KEY=%s\n' "${litestream_access_key_id}" "${litestream_secret_access_key}" > /etc/litestream.env
-  - chmod 600 /etc/litestream.env
+  # Authentication is private; only the Caddy process needs the password hash.
+  - chown root:caddy /etc/caddy/pulse-users
+  - chmod 640 /etc/caddy/pulse-users
+  - caddy validate --config /etc/caddy/Caddyfile
 
-  # If a replica exists, restore the database before first start
-  - -sudo -u pulse litestream restore -if-replica-exists -config /etc/litestream.yml /var/lib/pulse/pulse.db
-
+  # Both services require a successful restore and a mounted data volume.
   - systemctl daemon-reload
-  - systemctl enable --now pulse litestream caddy
+  - systemctl enable pulse litestream caddy
+  - systemctl restart caddy
+  - systemctl start pulse litestream

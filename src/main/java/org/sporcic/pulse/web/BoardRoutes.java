@@ -9,8 +9,8 @@ import java.util.Map;
 /**
  * The server-rendered dashboard: {@code GET /} is the full page, {@code GET
  * /board} the rows fragment htmx polls every 5 seconds. Both render the same
- * data - mutations rely on the poll to become visible, so there is no
- * fragment-pushing machinery anywhere.
+ * data. Successful mutations trigger an immediate fragment refresh; polling
+ * keeps check results current.
  */
 public class BoardRoutes {
 

@@ -12,6 +12,7 @@ import org.sporcic.pulse.data.Database;
 import org.sporcic.pulse.data.MonitorRepository;
 import org.sporcic.pulse.jobs.Jobs;
 import org.sporcic.pulse.metrics.Metrics;
+import org.sporcic.pulse.metrics.CheckMetrics;
 import org.sporcic.pulse.web.BoardRoutes;
 import org.sporcic.pulse.web.MonitorRoutes;
 import org.sporcic.pulse.web.api.ApiRoutes;
@@ -44,6 +45,10 @@ public class App {
      *                 metrics and HTTP metrics land in one scrape
      */
     public static Javalin create(Path dbFile, PrometheusMeterRegistry registry) {
+        return create(dbFile, registry, new CheckMetrics(registry));
+    }
+
+    public static Javalin create(Path dbFile, PrometheusMeterRegistry registry, CheckMetrics metrics) {
         var dsl = Database.open(dbFile);
         var repository = new MonitorRepository(dsl);
 
@@ -61,7 +66,7 @@ public class App {
             });
             config.fileRenderer(new JavalinJte(TemplateEngine.createPrecompiled(ContentType.Html)));
             new BoardRoutes(repository).register(config);
-            new MonitorRoutes(repository).register(config);
+            new MonitorRoutes(repository, metrics).register(config);
             new ApiRoutes(repository, new CheckRepository(dsl)).register(config);
         });
     }
@@ -79,7 +84,8 @@ public class App {
 
         var dbFile = Path.of(System.getenv().getOrDefault("PULSE_DB", "pulse.db"));
         var registry = Metrics.newRegistry();
-        Jobs.start(dbFile, registry);
-        create(dbFile, registry).start(7070);
+        var metrics = new CheckMetrics(registry);
+        Jobs.start(dbFile, metrics);
+        create(dbFile, registry, metrics).start("127.0.0.1", 7070);
     }
 }

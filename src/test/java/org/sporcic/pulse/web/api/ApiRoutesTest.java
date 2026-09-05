@@ -6,11 +6,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.sporcic.pulse.App;
 import org.sporcic.pulse.data.Database;
+import org.sporcic.pulse.data.MonitorRepository;
 
 import java.net.http.HttpRequest;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.sporcic.pulse.jooq.Tables.CHECK_RESULT;
 
@@ -97,4 +99,17 @@ class ApiRoutesTest {
         JavalinTest.test(App.create(dbFile()), (server, client) ->
                 assertEquals(404, client.get("/api/monitors/9999/checks").code()));
     }
+
+    @Test
+    void monitorResponsesDoNotExposeWebhookSecrets() {
+        var file = dbFile();
+        new MonitorRepository(Database.open(file))
+                .add("Private hook", "https://example.org", 60, "https://hooks.example/secret-token");
+        JavalinTest.test(App.create(file), (server, client) -> {
+            var body = client.get("/api/monitors").body().string();
+            assertFalse(body.contains("notifyUrl"));
+            assertFalse(body.contains("secret-token"));
+        });
+    }
+
 }

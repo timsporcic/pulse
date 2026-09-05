@@ -3,7 +3,6 @@ package org.sporcic.pulse.jobs;
 import org.sporcic.pulse.data.CheckRepository;
 import org.sporcic.pulse.data.MonitorRepository;
 import org.sporcic.pulse.notify.WebhookNotifier;
-import java.time.Instant;
 
 /**
  * One-off JobRunr job: deliver the down notification for one monitor. Because
@@ -23,19 +22,18 @@ public class NotifyDownJob {
     }
 
     /**
-     * Loads the monitor fresh and posts the webhook with its latest check
-     * details. State is re-read at delivery time, not captured at enqueue
-     * time: a monitor deleted (or stripped of its notify URL) in between is
-     * skipped quietly rather than notified stalely.
+     * Delivers the failing check captured at enqueue time, even if a later
+     * check recovered. Deleted monitors and removed notification URLs are skipped.
      */
-    public void notifyDown(int monitorId) {
+    public void notifyDown(int monitorId, int checkId) {
         var monitor = monitors.findById(monitorId).orElse(null);
         if (monitor == null || monitor.notifyUrl() == null || monitor.notifyUrl().isBlank()) {
             return;
         }
-        var latest = checks.listForMonitor(monitorId, 1);
-        var statusCode = latest.isEmpty() ? null : latest.get(0).statusCode();
-        var at = latest.isEmpty() ? Instant.now().toString() : latest.get(0).checkedAt();
-        notifier.notifyDown(monitor.notifyUrl(), monitor.name(), monitor.url(), statusCode, at);
+        var check = checks.findById(checkId).orElse(null);
+        if (check == null || check.monitorId() != monitorId || check.up()) {
+            return;
+        }
+        notifier.notifyDown(monitor.notifyUrl(), monitor.name(), monitor.url(), check.statusCode(), check.checkedAt());
     }
 }

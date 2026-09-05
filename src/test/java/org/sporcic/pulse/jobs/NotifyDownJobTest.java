@@ -55,11 +55,11 @@ class NotifyDownJobTest {
     }
 
     @Test
-    void deliversPayloadWithLatestCheckDetails() {
+    void deliversPayloadWithFailingCheckDetails() {
         var monitor = monitors.add("Example", "https://example.org", 60, hookUrl());
-        checks.add(monitor.id(), "2026-09-03T12:00:00Z", false, 503, null);
+        var failingCheckId = checks.add(monitor.id(), "2026-09-03T12:00:00Z", false, 503, null);
 
-        job.notifyDown(monitor.id());
+        job.notifyDown(monitor.id(), failingCheckId);
 
         assertEquals(1, receivedBodies.size());
         var body = receivedBodies.get(0);
@@ -70,8 +70,22 @@ class NotifyDownJobTest {
 
     @Test
     void deletedMonitorIsIgnoredQuietly() {
-        job.notifyDown(9999);
+        job.notifyDown(9999, 9999);
 
         assertTrue(receivedBodies.isEmpty());
     }
+
+    @Test
+    void delayedNotificationKeepsTheFailingCheckAfterRecovery() {
+        var monitor = monitors.add("Recovered", "https://example.org", 60, hookUrl());
+        var failingCheckId = checks.add(monitor.id(), "2026-09-03T12:00:00Z", false, 503, null);
+        checks.add(monitor.id(), "2026-09-03T12:01:00Z", true, 200, 10);
+
+        job.notifyDown(monitor.id(), failingCheckId);
+
+        assertEquals(1, receivedBodies.size());
+        assertTrue(receivedBodies.get(0).contains("\"statusCode\":503"));
+        assertTrue(receivedBodies.get(0).contains("2026-09-03T12:00:00Z"));
+    }
+
 }

@@ -68,10 +68,13 @@ resource "digitalocean_droplet" "pulse" {
   volume_ids = [digitalocean_volume.data.id]
 
   user_data = templatefile("${path.module}/../ops/cloud-init.yml", {
-    deploy_bucket_url            = local.deploy_bucket_url
-    litestream_access_key_id     = var.spaces_access_key_id
-    litestream_secret_access_key = var.spaces_secret_access_key
-    volume_device                = local.volume_device
+    deploy_bucket_url  = local.deploy_bucket_url
+    pulse_service      = file("${path.module}/../ops/pulse.service")
+    restore_service    = file("${path.module}/../ops/pulse-restore.service")
+    litestream_service = file("${path.module}/../ops/litestream.service")
+    litestream_env_b64 = base64encode("LITESTREAM_ACCESS_KEY_ID=${var.spaces_access_key_id}\nLITESTREAM_SECRET_ACCESS_KEY=${var.spaces_secret_access_key}\n")
+    caddy_users_b64    = base64encode("${var.demo_username} ${var.demo_password_hash}\n")
+    volume_device      = local.volume_device
   })
 
   depends_on = [

@@ -1,6 +1,7 @@
 package org.sporcic.pulse.jobs;
 
 import io.javalin.Javalin;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,10 +11,14 @@ import org.sporcic.pulse.check.Pinger;
 import org.sporcic.pulse.data.CheckRepository;
 import org.sporcic.pulse.data.Database;
 import org.sporcic.pulse.data.MonitorRepository;
+import org.sporcic.pulse.metrics.CheckMetrics;
+import org.sporcic.pulse.metrics.Metrics;
 
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.sporcic.pulse.jooq.Tables.CHECK_RESULT;
@@ -29,9 +34,9 @@ class CheckDueMonitorsJobTest {
     MonitorRepository monitors;
     CheckRepository checks;
     CheckDueMonitorsJob job;
-    java.util.List<Integer> notifiedMonitorIds = new java.util.ArrayList<>();
-    io.micrometer.prometheusmetrics.PrometheusMeterRegistry registry =
-            org.sporcic.pulse.metrics.Metrics.newRegistry();
+    List<Integer> notifiedMonitorIds = new ArrayList<>();
+    PrometheusMeterRegistry registry =
+            Metrics.newRegistry();
 
     @BeforeEach
     void setUp() {
@@ -42,8 +47,8 @@ class CheckDueMonitorsJobTest {
         dsl = Database.open(tempDir.resolve("pulse-test.db"));
         monitors = new MonitorRepository(dsl);
         checks = new CheckRepository(dsl);
-        job = new CheckDueMonitorsJob(monitors, checks, new Pinger(), notifiedMonitorIds::add,
-                new org.sporcic.pulse.metrics.CheckMetrics(registry));
+        job = new CheckDueMonitorsJob(monitors, checks, new Pinger(), (monitorId, checkId) -> notifiedMonitorIds.add(monitorId),
+                new CheckMetrics(registry));
     }
 
     @AfterEach
@@ -112,7 +117,7 @@ class CheckDueMonitorsJobTest {
 
         job.run();
 
-        assertEquals(java.util.List.of(monitor.id()), notifiedMonitorIds);
+        assertEquals(List.of(monitor.id()), notifiedMonitorIds);
     }
 
     @Test
@@ -163,9 +168,9 @@ class CheckDueMonitorsJobTest {
         job.run();
 
         var scrape = registry.scrape();
-        assertTrue(scrape.contains("pulse_monitor_up{monitor=\"Watched\"} 1.0"));
-        assertTrue(scrape.contains("pulse_monitor_up{monitor=\"Fallen\"} 0.0"));
-        assertTrue(scrape.contains("pulse_check_seconds_count{monitor=\"Watched\"} 1"));
+        assertTrue(scrape.contains("pulse_monitor_up{monitor=\"Watched\",monitor_id=\"1\"} 1.0"));
+        assertTrue(scrape.contains("pulse_monitor_up{monitor=\"Fallen\",monitor_id=\"2\"} 0.0"));
+        assertTrue(scrape.contains("pulse_check_seconds_count{monitor=\"Watched\",monitor_id=\"1\"} 1"));
     }
 
     @Test
@@ -176,5 +181,32 @@ class CheckDueMonitorsJobTest {
         job.run();
 
         assertEquals(0, checkCount(monitor.id()));
+    }
+
+    @Test
+    void unexpectedCheckFailureFailsTheSweep() {
+        monitors.add("Broken checker", targetUrl("/ok"), 60, null);
+        var failing = new CheckDueMonitorsJob(monitors, checks, new Pinger() {
+            @Override
+            public PingResult ping(String url) {
+                throw new IllegalStateException("checker failed");
+            }
+        }, (monitorId, checkId) -> notifiedMonitorIds.add(monitorId), new CheckMetrics(registry));
+
+        var failure = assertThrows(IllegalStateException.class, failing::run);
+        assertEquals("checker failed", failure.getCause().getMessage());
+    }
+
+
+    @Test
+    void sweepRemovesMetricsForDeletedMonitorsEvenWhenNothingIsDue() {
+        var monitor = monitors.add("Removed", targetUrl("/ok"), 60, null);
+        job.run();
+        monitors.delete(monitor.id());
+
+        job.run();
+
+        assertTrue(registry.find("pulse.monitor.up").gauges().isEmpty());
+        assertTrue(registry.find("pulse.check.seconds").timers().isEmpty());
     }
 }

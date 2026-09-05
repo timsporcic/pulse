@@ -9,7 +9,7 @@ import org.sporcic.pulse.data.MonitorRepository;
  * The read-only JSON API: {@code GET /api/monitors} and
  * {@code GET /api/monitors/{id}/checks} (newest first, capped at
  * {@link #MAX_CHECKS}, 404 for an unknown monitor). The domain records
- * serialize directly as DTOs, so their field names are the wire contract.
+ * expose check results; monitor responses omit private webhook URLs.
  */
 public class ApiRoutes {
 
@@ -29,8 +29,12 @@ public class ApiRoutes {
         config.routes.get("/api/monitors/{id}/checks", this::listChecks);
     }
 
+    public record MonitorResponse(int id, String name, String url, int intervalSecs, boolean enabled) {}
+
     private void listMonitors(Context ctx) {
-        ctx.json(monitors.list());
+        ctx.json(monitors.list().stream()
+                .map(m -> new MonitorResponse(m.id(), m.name(), m.url(), m.intervalSecs(), m.enabled()))
+                .toList());
     }
 
     private void listChecks(Context ctx) {
