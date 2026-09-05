@@ -1,14 +1,14 @@
 plugins {
     id 'application'
     id 'com.gradleup.shadow' version '9.6.1'
-    id 'org.jooq.jooq-codegen-gradle' version '3.21.7'   // keep in sync with jooqVersion below
+    id 'org.jooq.jooq-codegen-gradle' version '3.21.8'   // keep in sync with jooqVersion below
     id 'gg.jte.gradle' version '3.2.4'                   // keep in sync with gg.jte:jte below
-    id 'com.github.ben-manes.versions' version '0.61.0'
+    id 'io.github.ben-manes.versions' version '0.61.0'
 }
 
 // the plugins block above cannot reference variables, so the codegen plugin
 // carries the same version as a literal
-def jooqVersion = '3.21.7'
+def jooqVersion = '3.21.8'
 
 group = 'org.sporcic'
 
@@ -34,11 +34,11 @@ dependencies {
     jooqCodegen "org.jooq:jooq-meta-extensions:$jooqVersion"
 
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.2'
-    implementation 'org.jobrunr:jobrunr:7.5.1'
+    implementation 'org.jobrunr:jobrunr:8.8.2'
 
     implementation 'io.micrometer:micrometer-registry-prometheus:1.17.1'
 
-    implementation 'org.slf4j:slf4j-api:2.0.18'
+    implementation 'org.slf4j:slf4j-api:2.0.19'
     runtimeOnly 'ch.qos.logback:logback-classic:1.6.3'
     runtimeOnly 'net.logstash.logback:logstash-logback-encoder:9.0'
 
