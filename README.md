@@ -73,6 +73,7 @@ checks start within ~15 seconds). JSON API at `/api/monitors` and
 defaults to `./pulse.db` (override with `PULSE_DB`). The application binds to
 `127.0.0.1:7070`; Caddy is the public entry point. Monitor and webhook URLs must
 use HTTP or HTTPS, without embedded credentials, and check intervals must be positive.
+Monitor names cannot be blank, and monitor URLs cannot contain query strings.
 
 ## Deploy it
 

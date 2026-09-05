@@ -94,6 +94,7 @@ class MonitorRoutesTest {
             for (var form : List.of(
                     "url=ftp://example.org", "url=https://", "url=not-a-url",
                     "url=https://user:secret@example.org", "url=https://example.org:99999",
+                    "url=https://example.org?search=test", "url=https://example.org?",
                     "url=https://example.org&interval_secs=0",
                     "url=https://example.org&interval_secs=-1",
                     "url=https://example.org&notify_url=file:///tmp/hook")) {
@@ -117,6 +118,22 @@ class MonitorRoutesTest {
             assertEquals(204, client.delete("/monitors/" + monitor.id()).code());
             assertFalse(client.get("/metrics").body().string().contains("pulse_monitor_up{"));
             assertFalse(client.get("/metrics").body().string().contains("pulse_check_seconds_count{"));
+        });
+    }
+
+    @Test
+    void whitespaceOnlyNameIsRejectedWithoutSaving() {
+        JavalinTest.test(App.create(dbFile()), (server, client) -> {
+            assertEquals(400, postForm(client, "/monitors", "name=++%09&url=https://example.org").code());
+            assertEquals("[]", client.get("/api/monitors").body().string());
+        });
+    }
+
+    @Test
+    void queryFreePathsAndWebhookQueryStringsRemainValid() {
+        JavalinTest.test(App.create(dbFile()), (server, client) -> {
+            assertEquals(201, postForm(client, "/monitors",
+                    "name=Example&url=https://example.org/health&notify_url=https://hooks.example/notify?token=secret").code());
         });
     }
 }

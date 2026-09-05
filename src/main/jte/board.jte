@@ -8,6 +8,7 @@
   <title>Pulse</title>
   <link rel="stylesheet" href="/tailwind.css">
   <script src="/htmx.min.js" defer></script>
+  <script src="/monitor-form.js" defer></script>
 </head>
 <body class="min-h-screen bg-mist text-ink antialiased">
 
@@ -25,7 +26,8 @@
 
     <h1 class="mb-6 text-2xl font-semibold tracking-tight">Monitors</h1>
 
-    <form hx-post="/monitors" hx-swap="none"
+    <form id="monitor-form" hx-post="/monitors" hx-swap="none"
+          hx-on::after:request="if (event.detail.ctx.response.status === 201) { this.reset(); this.elements.namedItem('name').focus(); }"
           class="mb-6 flex flex-wrap items-end gap-3 rounded-lg border border-ink/10 bg-white p-4">
       <label class="flex-1 min-w-40">
         <span class="mb-1 block text-sm text-ink/60">Name</span>

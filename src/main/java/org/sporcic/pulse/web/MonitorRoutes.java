@@ -41,15 +41,19 @@ public class MonitorRoutes {
         if (intervalSecs <= 0) {
             throw new BadRequestResponse("interval_secs must be positive");
         }
-        url = httpUrl(url, "url");
+        var monitorUrl = httpUrl(url, "url");
+        if (monitorUrl.getRawQuery() != null) {
+            throw new BadRequestResponse("Monitor URLs must not contain a query string");
+        }
+        url = monitorUrl.toString();
         var notifyUrl = ctx.formParam("notify_url");
-        notifyUrl = notifyUrl == null || notifyUrl.isBlank() ? null : httpUrl(notifyUrl, "notify_url");
+        notifyUrl = notifyUrl == null || notifyUrl.isBlank() ? null : httpUrl(notifyUrl, "notify_url").toString();
 
         Monitor monitor = repository.add(name, url, intervalSecs, notifyUrl);
         ctx.header("HX-Trigger", "monitorsChanged").status(201).result(String.valueOf(monitor.id()));
     }
 
-    private static String httpUrl(String value, String field) {
+    private static URI httpUrl(String value, String field) {
         try {
             var uri = URI.create(value.strip());
             if (!("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
@@ -57,7 +61,7 @@ public class MonitorRoutes {
                     || uri.getPort() == 0 || uri.getPort() > 65535) {
                 throw new IllegalArgumentException();
             }
-            return uri.toString();
+            return uri;
         } catch (IllegalArgumentException e) {
             throw new BadRequestResponse(field + " must be an HTTP or HTTPS URL with a host and no embedded credentials");
         }
